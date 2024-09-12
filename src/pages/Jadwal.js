@@ -679,8 +679,8 @@ class JadwalKehadiran extends Component {
       { value: "Desember", label: "Desember" },
     ];
     return (
-      <div className="container mx-auto mt-2">
-        <div className="rounded-lg bg-white shadow-lg my-5">
+      <div className="container mx-auto mt-2 ">
+        <div className="rounded-lg bg-white shadow-lg my-5 w-full">
           <div className="flex flex-col p-10">
             <h4 className="text-black font-bold text-xl mt-5">
               Form Input Periode Jadwal
@@ -691,10 +691,12 @@ class JadwalKehadiran extends Component {
 
             {this.state.isUpdate ? (
               <>
-                <div className="form-input">
+                <div className="form-input ">
                   <Row className="form-row">
                     <Form.Group className="form-field">
-                      <Form.Label className="label-text">Pegawai :</Form.Label>
+                      <Form.Label className="label-text text-sm">
+                        Pegawai :
+                      </Form.Label>
                       <div className="dropdown-container">
                         <Select
                           onChange={(selectedOption) =>

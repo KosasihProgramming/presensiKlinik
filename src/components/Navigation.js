@@ -16,7 +16,7 @@ const loggedInNavItems = [
 const notLoggedInNavItems = [
   { name: "Kehadiran", href: "/kehadiran" },
   { name: "Absen", href: "/presensi" },
-  { name: "Izin", href: "", izin: true },
+  // { name: "Izin", href: "", izin: true },
 ];
 
 const masterData = [

@@ -26,6 +26,7 @@ const Pulang = () => {
     jamKeluarShift: "",
     durasi: 0,
     telat: 0,
+    keterangan: "",
     tanggalAbsen: "",
     dendaTelat: 0,
     isPindahKlinik: 1,
@@ -35,6 +36,7 @@ const Pulang = () => {
     isIzin: false,
     isProses: false,
     jadwal: null,
+    ket: "",
     tanggal: dayjs().locale("id").format("YYYY-MM-DD"),
   });
 
@@ -67,6 +69,7 @@ const Pulang = () => {
           isPindahKlinik: data.is_pindah_klinik,
           lembur: data.lembur,
           namaShift: data.nama_shift,
+          ket: data.keterangan,
         }));
       })
       .catch((error) => {
@@ -92,19 +95,8 @@ const Pulang = () => {
 
   const handlePulang = (e) => {
     e.preventDefault();
-    console.log(state.tanggal);
-    console.log(state.tanggalAbsen, "absen");
-    const jamPulang = getCurrentTime();
-    if (state.tanggalAbsen == state.tanggal) {
-      const durasi = hitungSelisihMenit(jamPulang, state.jamKeluarShift);
-      if (durasi > 5) {
-        setState((prevState) => ({ ...prevState, isIzin: true }));
-      } else {
-        handleSubmit();
-      }
-    } else {
-      handleSubmit();
-    }
+
+    handleSubmit();
   };
   const handleSubmit = () => {
     setState((prevState) => ({ ...prevState, isProses: true }));
@@ -139,6 +131,10 @@ const Pulang = () => {
               jam_masuk: state.jamMasuk,
               jam_keluar: jamKeluar,
               isIzin: state.isIzin,
+              ket:
+                state.ket == null
+                  ? "Pulang : " + state.keterangan
+                  : state.ket + "Pulang : " + state.keterangan,
             })
             .then((response) => {
               Swal.fire({
@@ -322,6 +318,15 @@ const Pulang = () => {
                       setState({ ...state, barCode: e.target.value })
                     }
                     className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Keterangan"
+                    className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
+                    value={state.keterangan}
+                    onChange={(e) => {
+                      setState({ ...state, keterangan: e.target.value });
+                    }}
                   />
                   <div className="flex flex-row gap-4">
                     <Link

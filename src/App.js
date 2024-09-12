@@ -53,98 +53,78 @@ function App() {
   return (
     <div className="bg-gray-200 pb-10">
       <Router>
-        {isMobile ? (
-          // Jika perangkat mobile, hanya akses ke IzinPage dan SendedForm
-          <Routes>
-            <Route path="/" Component={IzinPage} />
-            <Route path="/success" Component={SendedForm} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        ) : (
-          // Jika perangkat desktop/laptop, akses semua halaman
-          <>
-            <Navigation 
-             openIzin={() => {
-              setIsizin(!isIzin);
-            }}
-            />
-            <ModalAddIzin
-            open={isIzin}
-            setOpen={() => {
-              setIsizin(!isIzin);
-            }}
-          />
-            <Routes>
-              {isLoggedIn ? (
-                <>
-                  <Route path="/" Component={Home} />
-                  <Route path="/shift" Component={Shift} />
-                  <Route path="/jadwal-kehadiran" Component={JadwalKehadiran} />
-                  <Route
-                    path="/jadwal/detail-jadwal/:idJadwal"
-                    Component={DetailJadwal}
-                  />
-                  <Route path="/kehadiran" Component={Kehadiran} />
-                  <Route path="/presensi" Component={Absen} />
-                  <Route path="/pulang/:id_kehadiran" Component={Pulang} />
-                  <Route
-                    path="/rekap-kehadiran-dokter"
-                    Component={RekapKehadiranDokter}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-dokter-gigi"
-                    Component={RekapKehadiranDokterGigi}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-perawat"
-                    Component={RekapKehadiranPerawat}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-perawat-gigi"
-                    Component={RekapKehadiranPerawatGigi}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-farmasi"
-                    Component={RekapKehadiranFarmasi}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-pegawai-kantor"
-                    Component={RekapKehadiranPegawai}
-                  />
-                  {/* Penggajian */}
-                  <Route path="/rekap-gaji" Component={RekapGajiPerShift} />
-                  <Route
-                    path="/rekap-gaji-dokter"
-                    Component={RekapGajiDokter}
-                  />
-                  <Route
-                    path="/rekap-shift-perawat-gigi"
-                    Component={RekapGajiShiftPerawat}
-                  />
-                  <Route
-                    path="/rekap-periode-perawat-gigi"
-                    Component={RekapGajiPeriodePerawat}
-                  />
-                  <Route
-                    path="/rekap-shift-perawat-umum"
-                    Component={RekapShiftPerawatUmum}
-                  />
-                  <Route path="/data-pegawai" Component={DataPegawai} />
-                </>
-              ) : (
-                <>
-                  <Route path="/login" Component={Login} />
-                  <Route path="/kehadiran" Component={Kehadiran} />
-                  <Route path="/presensi" Component={Absen} />
-                  <Route path="/pulang/:id_kehadiran" Component={Pulang} />
-                  {sessionStorage.getItem("isSuccess") && (
-                    <Route path="/success" Component={SendedForm} />
-                  )}
-                </>
+        <Navigation
+          openIzin={() => {
+            setIsizin(!isIzin);
+          }}
+        />
+
+        <Routes>
+          {isLoggedIn ? (
+            <>
+              <Route path="/" Component={Home} />
+              <Route path="/shift" Component={Shift} />
+              <Route path="/jadwal-kehadiran" Component={JadwalKehadiran} />
+              <Route
+                path="/jadwal/detail-jadwal/:idJadwal"
+                Component={DetailJadwal}
+              />
+              <Route path="/kehadiran" Component={Kehadiran} />
+              <Route path="/presensi" Component={Absen} />
+              <Route path="/pulang/:id_kehadiran" Component={Pulang} />
+              <Route
+                path="/rekap-kehadiran-dokter"
+                Component={RekapKehadiranDokter}
+              />
+              <Route
+                path="/rekap-kehadiran-dokter-gigi"
+                Component={RekapKehadiranDokterGigi}
+              />
+              <Route
+                path="/rekap-kehadiran-perawat"
+                Component={RekapKehadiranPerawat}
+              />
+              <Route
+                path="/rekap-kehadiran-perawat-gigi"
+                Component={RekapKehadiranPerawatGigi}
+              />
+              <Route
+                path="/rekap-kehadiran-farmasi"
+                Component={RekapKehadiranFarmasi}
+              />
+              <Route
+                path="/rekap-kehadiran-pegawai-kantor"
+                Component={RekapKehadiranPegawai}
+              />
+              {/* Penggajian */}
+              <Route path="/rekap-gaji" Component={RekapGajiPerShift} />
+              <Route path="/rekap-gaji-dokter" Component={RekapGajiDokter} />
+              <Route
+                path="/rekap-shift-perawat-gigi"
+                Component={RekapGajiShiftPerawat}
+              />
+              <Route
+                path="/rekap-periode-perawat-gigi"
+                Component={RekapGajiPeriodePerawat}
+              />
+              <Route
+                path="/rekap-shift-perawat-umum"
+                Component={RekapShiftPerawatUmum}
+              />
+              <Route path="/data-pegawai" Component={DataPegawai} />
+            </>
+          ) : (
+            <>
+              <Route path="/login" Component={Login} />
+              <Route path="/kehadiran" Component={Kehadiran} />
+              <Route path="/presensi" Component={Absen} />
+              <Route path="/pulang/:id_kehadiran" Component={Pulang} />
+              {sessionStorage.getItem("isSuccess") && (
+                <Route path="/success" Component={SendedForm} />
               )}
-            </Routes>
-          </>
-        )}
+            </>
+          )}
+        </Routes>
       </Router>
     </div>
   );

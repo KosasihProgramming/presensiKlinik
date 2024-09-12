@@ -43,12 +43,29 @@ class RekapKehadiranDokter extends Component {
     super(props);
     this.state = {
       isProses: false,
+      judul: [],
+      judul2: [],
+      dataExport2: [],
+      dataExport: [],
       bulan: null,
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
+      namaKlinik: "",
     };
   }
 
+  componentDidMount() {
+    this.getKlinik();
+  }
+
+  getKlinik = async () => {
+    try {
+      const response = await axios.get(`${urlAPI}/klinik`);
+      this.setState({ namaKlinik: response.data[0].nama_instansi });
+    } catch (error) {
+      console.error("Error fetching API", error);
+    }
+  };
   getData = async (bulan, tahun) => {
     const arg = { bulan, tahun };
 
@@ -100,6 +117,7 @@ class RekapKehadiranDokter extends Component {
         }
       );
       this.setState({ rekapKehadiran: response.data });
+      this.formatCSVData(response.data);
     } catch (error) {
       console.log("Error pada tanggal:", error);
     }
@@ -107,7 +125,6 @@ class RekapKehadiranDokter extends Component {
 
   cekData = async (bulan, tahun) => {
     const arg = { bulan, tahun };
-    alert("hsbdja");
     try {
       const response = await axios.post(
         `${urlAPI}/rekap-kehadiran-dokter/cek`,
@@ -132,7 +149,137 @@ class RekapKehadiranDokter extends Component {
       console.log("Error pada tanggal:", error);
     }
   };
+  getDataKomisi = async (tanggal, barcode) => {
+    const arg = { tanggal: tanggal, barcode: barcode };
 
+    try {
+      const response = await axios.post(
+        `${urlAPI}/rekap-kehadiran-dokter/get-insentif`,
+        arg,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      // Proses untuk menghitung total dan menambahkan properti baru
+      const sales = response.data;
+      const data = sales.forEach((sale) => {
+        const totalGrossAmount = sale.salesdetail.reduce(
+          (total, detail) => total + detail.grossamount,
+          0
+        );
+        const totalNetAmount = sale.salesdetail.reduce(
+          (total, detail) => total + detail.netamount,
+          0
+        );
+        const totalPrice = sale.salesdetail.reduce(
+          (total, detail) => total + detail.price,
+          0
+        );
+        const cost = sale.salesdetail.reduce(
+          (total, detail) => total + detail.price - detail.costprice,
+          0
+        );
+        // Menambahkan total ke dalam properti baru pada objek sales
+        sale.totalGrossAmount = totalGrossAmount;
+        sale.totalNetAmount = totalNetAmount;
+        sale.totalPrice = totalPrice;
+        sale.totalCost = cost;
+        sale.totalDetail = sale.salesdetail.length;
+      });
+
+      const dataFilter = sales.map((a) => {
+        return {
+          gross: a.totalGrossAmount,
+          net: a.totalNetAmount,
+          price: a.totalPrice,
+          cost: a.totalCost,
+          total: a.totalDetail,
+          man: a.salesmanid,
+        };
+      });
+      const totalGrossAmount = dataFilter.reduce(
+        (total, detail) => total + detail.gross,
+        0
+      );
+      const totalNetAmount = dataFilter.reduce(
+        (total, detail) => total + detail.net,
+        0
+      );
+
+      console.log(sales);
+      const total = dataFilter.reduce((a, detail) => a + detail.total, 0);
+      // Menggabungkan semua objek dalam detailSales menjadi satu array
+      // Menggabungkan semua objek dalam detailSales menjadi satu array
+      const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
+
+      const cleanedData = allDetailSales.map((item) => ({
+        ...item,
+        formula: item.formula.replace("v.ProductQuantity*", ""), // Menghapus kata "Tahun"
+      }));
+      // Mengelompokkan berdasarkan productid dan menghitung jumlahnya
+      // Mengelompokkan berdasarkan productid dan menghitung jumlahnya serta menjumlahkan nilai lainnya
+      const groupedByProductId = cleanedData.reduce((acc, item) => {
+        // Jika productid belum ada di accumulator, inisialisasi
+        if (!acc[item.productid]) {
+          acc[item.productid] = {
+            productid: item.productid,
+            nama: item.name,
+            count: 0,
+            cost: item.costprice,
+            price: item.price,
+            totalCost: 0,
+            totalPrice: 0,
+            totalLaba: 0,
+            totalKomisi: 0,
+          };
+        }
+
+        // Menambahkan jumlah kemunculan
+        acc[item.productid].count += 1;
+
+        // Menambahkan total grossamount, netamount, dan price
+        acc[item.productid].totalCost += item.costprice * item.salesqty;
+        acc[item.productid].totalPrice += item.price * item.salesqty;
+        acc[item.productid].totalLaba += Math.abs(
+          item.price * item.salesqty - item.costprice * item.salesqty
+        );
+        acc[item.productid].totalKomisi +=
+          parseInt(item.formula) * item.salesqty;
+        return acc;
+      }, {});
+
+      // Mengonversi hasil menjadi array
+      const result = Object.values(groupedByProductId);
+      const sortedResult = result.sort((a, b) =>
+        a.productid.localeCompare(b.productid)
+      );
+      const totalPrice = dataFilter.reduce(
+        (total, detail) => total + detail.net,
+        0
+      );
+      const totalCost = result.reduce(
+        (total, detail) => total + Math.round(detail.totalLaba, 4),
+        0
+      );
+      const komisi = result.reduce(
+        (total, detail) => total + Math.round(detail.totalKomisi, 4),
+        0
+      );
+      console.log(sortedResult);
+      console.log("total gross", totalGrossAmount);
+      console.log("total net", totalNetAmount);
+      console.log("total Price", totalPrice);
+      console.log("total Cost", totalCost);
+      console.log("total Commision", komisi);
+      console.log(sales);
+      console.log(allDetailSales);
+      return komisi;
+    } catch (error) {
+      console.log("Error pada tanggal:", error);
+    }
+  };
   handleSearch = (e) => {
     e.preventDefault();
     this.setState({ isProses: true });
@@ -142,43 +289,181 @@ class RekapKehadiranDokter extends Component {
     this.setState({ isProses: false });
   };
 
-  formatCSVData = (data) => {
+  formatCSVData = async (data) => {
     const sortedData = data.sort(
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
-    console.log(sortedData, "sort");
 
-    const dates = [...new Set(sortedData.map((item) => item.tanggal))];
-    const shifts = [
-      "Shift Dokter Pagi",
-      "Shift Dokter Siang",
-      "Shift Dokter Malam",
-    ];
+    // Gunakan Promise.all untuk menangani operasi asynchronous
+    const updatedData = await Promise.all(
+      sortedData.map(async (item) => {
+        const komisi = await this.getDataKomisi(item.tanggal, item.salesmanid); // Tunggu hasil getDataKomisi
+        return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
+      })
+    );
 
-    const csvData = dates.map((date) => {
-      const row = { Tanggal: date };
-      shifts.forEach((shift) => {
-        const doctors = sortedData
-          .filter((item) => item.tanggal === date && item.nama_shift === shift)
-          .map((item) => item.nama_dokter)
-          .join(" & ");
-        row[shift] = doctors || "";
-      });
-      return row;
+    console.log(updatedData, "sort");
+
+    const dataPengganti = sortedData.filter(
+      (a) => a.nama_dokter_pengganti !== ""
+    );
+
+    const dataArrayString = updatedData.map((obj, index) => {
+      return [
+        index + 1,
+        this.formatTanggal(obj.tanggal),
+        obj.nama_dokter,
+        obj.nama_shift,
+        obj.jam_masuk,
+        obj.jam_pulang,
+        obj.telat,
+        obj.nominal_shift,
+        obj.komisi,
+        obj.denda_telat,
+        parseInt(obj.nominal_shift) - parseInt(obj.denda_telat),
+        obj.nama_petugas,
+      ];
     });
 
-    return csvData;
+    const dataArrayPengganti = dataPengganti.map((obj, index) => {
+      return [
+        index + 1,
+        this.formatTanggal(obj.tanggal),
+        obj.nama_dokter,
+        obj.nama_dokter_pengganti,
+        obj.nama_shift,
+        obj.jam_masuk,
+        obj.jam_pulang,
+        obj.nominal_shift,
+        obj.komisi,
+        obj.telat,
+        obj.denda_telat,
+        parseInt(obj.nominal_shift) -
+          parseInt(obj.denda_telat) +
+          parseInt(obj.komisi),
+        obj.nama_petugas,
+      ];
+    });
+
+    const propertyNames = [
+      ["Rekap Kehadiran Staff Dokter " + this.state.namaKlinik],
+      [""],
+      [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
+      [""],
+      [
+        "No",
+        "Tanggal",
+        "Nama Dokter",
+        "Nama Shift",
+        "Jam Masuk",
+        "Jam Pulang",
+        "Telat (Menit)",
+        "Nominal Kehadiran",
+        "Nominal Komisi",
+        "Denda Telat",
+        "Total Nominal Kehadiran",
+        "Nama Petugas",
+      ],
+    ];
+    const propertyNames2 = [
+      ["Rekap Kehadiran Staff Dokter Pengganti " + this.state.namaKlinik],
+      [""],
+      [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
+      [""],
+      [
+        "No",
+        "Tanggal",
+        "Nama Dokter",
+        "",
+        "Nama Shift",
+        "Jam",
+        "",
+        "Telat",
+        "",
+        "Gaji",
+        "",
+        "Total",
+        "Petugas",
+        "",
+      ],
+      [
+        "",
+        "",
+        "Dokter Tetap",
+        "Dokter Pengganti",
+        "",
+        "Jam Masuk",
+        "Jam Pulang",
+        "Durasi",
+        "Denda",
+        "Uang Duduk",
+        "Uang Insentif",
+        "",
+        "Nama",
+        "Paraf",
+      ],
+    ];
+
+    // Set data ke state
+    this.setState({
+      judul: propertyNames,
+      judul2: propertyNames2,
+      dataExport: dataArrayString,
+      dataExport2: dataArrayPengganti,
+    });
   };
 
-  downloadCSV = (e) => {
+  convertToCSV = (array) => {
+    return array.map((row) => row.join(";")).join("\r\n");
+  };
+
+  downloadCSV = (data, fileName) => {
+    const csvData = new Blob([data], { type: "text/csv;charset=utf-8;" });
+    const csvURL = URL.createObjectURL(csvData);
+    const link = document.createElement("a");
+    link.href = csvURL;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  handleExport = (e) => {
     e.preventDefault();
-    const { rekapKehadiran } = this.state;
-    const formattedData = this.formatCSVData(rekapKehadiran);
-    const csv = Papa.unparse(formattedData);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "REKAP-KEHADIRAN-DOKTER-UMUM.csv");
+    console.log(this.state.rekapKehadiran);
+    const { dataExport, judul } = this.state;
+    // Flatten the array for csv
+    const csvContent = this.convertToCSV([...judul, ...dataExport]);
+    this.downloadCSV(
+      csvContent,
+      `Data Rekap Kehadiran Dokter ${this.state.bulan} ${this.state.tahun}.csv`
+    );
+    const { dataExport2, judul2 } = this.state;
+    // Flatten the array for csv
+    const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
+    this.downloadCSV(
+      csvContent2,
+      `Data Rekap Kehadiran Dokter Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
+    );
   };
+  formatTanggal = (tanggal) => {
+    const options = { day: "numeric", month: "long", year: "numeric" };
+    const formattedDate = new Date(tanggal).toLocaleDateString(
+      "id-ID",
+      options
+    );
+    console.log(formattedDate);
+    return formattedDate;
+  };
+  formatJam = (jam) => {
+    const formatTime = (time) => {
+      return time.length > 5 ? time.substring(0, 5) : time;
+    };
 
+    // Ubah jam1 dan jam2 menjadi format HH:mm
+    const formattedJam1 = formatTime(jam);
+    return formattedJam1;
+  };
   render() {
     const { rekapKehadiran } = this.state;
 
@@ -317,7 +602,7 @@ class RekapKehadiranDokter extends Component {
                         <button
                           type="submit"
                           className="btn-input custom-btn btn-15"
-                          onClick={this.downloadCSV}
+                          onClick={this.handleExport}
                           style={{
                             display: "flex",
                             justifyContent: "center",
