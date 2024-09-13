@@ -38,7 +38,7 @@ const formatCurrency = (number) => {
   }).format(number);
 };
 
-class RekapKehadiranPerawatGigi extends Component {
+class RekapKehadiranPerawat extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -71,7 +71,7 @@ class RekapKehadiranPerawatGigi extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat-gigi/get`,
+        `${urlAPI}/rekap-kehadiran-perawat/get`,
         arg,
         {
           headers: {
@@ -89,7 +89,7 @@ class RekapKehadiranPerawatGigi extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat-gigi/delete`,
+        `${urlAPI}/rekap-kehadiran-perawat/delete`,
         arg,
         {
           headers: {
@@ -108,7 +108,7 @@ class RekapKehadiranPerawatGigi extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat-gigi/cek`,
+        `${urlAPI}/rekap-kehadiran-perawat/cek`,
         arg,
         {
           headers: {
@@ -128,7 +128,7 @@ class RekapKehadiranPerawatGigi extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat-gigi/cek`,
+        `${urlAPI}/rekap-kehadiran-perawat/cek`,
         arg,
         {
           headers: {
@@ -155,7 +155,7 @@ class RekapKehadiranPerawatGigi extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat-gigi/get-insentif`,
+        `${urlAPI}/rekap-kehadiran-perawat/get-insentif`,
         arg,
         {
           headers: {
@@ -256,20 +256,23 @@ class RekapKehadiranPerawatGigi extends Component {
       const sortedResult = result.sort((a, b) =>
         a.productid.localeCompare(b.productid)
       );
+      const resultFilter = sortedResult.filter(
+        (a) => !a.nama.includes("PERIKSA DOKTER")
+      );
 
       const totalPrice = dataFilter.reduce(
         (total, detail) => total + detail.net,
         0
       );
-      const totalCost = sortedResult.reduce(
+      const totalCost = resultFilter.reduce(
         (total, detail) => total + Math.round(detail.totalLaba, 4),
         0
       );
-      const komisi = sortedResult.reduce(
+      const komisi = resultFilter.reduce(
         (total, detail) => total + Math.round(detail.totalKomisi, 4),
         0
       );
-      console.log(sortedResult);
+      console.log(resultFilter);
       console.log("total gross", totalGrossAmount);
       console.log("total net", totalNetAmount);
       console.log("total Price", totalPrice);
@@ -522,7 +525,7 @@ class RekapKehadiranPerawatGigi extends Component {
           <div className="rounded-lg bg-white shadow-lg my-5">
             <div className="flex flex-col p-10">
               <h4 className="text-black font-bold text-xl">
-                Cari Rekapan per periode - Perawat Gigi
+                Cari Rekapan per periode - Perawat Umum
               </h4>
               <br />
               <hr />
@@ -613,7 +616,7 @@ class RekapKehadiranPerawatGigi extends Component {
                         <button
                           type="submit"
                           className="btn-input custom-btn btn-15"
-                          onClick={this.downloadCSV}
+                          onClick={this.handleExport}
                           style={{
                             display: "flex",
                             justifyContent: "center",
@@ -650,7 +653,7 @@ class RekapKehadiranPerawatGigi extends Component {
                 <h2>Memproses...</h2>
               ) : (
                 <MUIDataTable
-                  title={"Data Rekap Perawat Gigi"}
+                  title={"Data Rekap Perawat"}
                   data={dataTabel}
                   columns={columnsData}
                   options={options}
@@ -664,4 +667,4 @@ class RekapKehadiranPerawatGigi extends Component {
   }
 }
 
-export default RekapKehadiranPerawatGigi;
+export default RekapKehadiranPerawat;
