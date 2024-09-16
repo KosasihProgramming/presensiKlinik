@@ -38,7 +38,7 @@ const formatCurrency = (number) => {
   }).format(number);
 };
 
-class RekapKehadiranPerawat extends Component {
+class RekapKehadiranAnalis extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -71,7 +71,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get`,
+        `${urlAPI}/rekap-kehadiran-analis/get`,
         arg,
         {
           headers: {
@@ -89,7 +89,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/delete`,
+        `${urlAPI}/rekap-kehadiran-analis/delete`,
         arg,
         {
           headers: {
@@ -108,7 +108,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-analis/cek`,
         arg,
         {
           headers: {
@@ -128,7 +128,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-analis/cek`,
         arg,
         {
           headers: {
@@ -155,7 +155,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get-insentif`,
+        `${urlAPI}/rekap-kehadiran-analis/get-insentif`,
         arg,
         {
           headers: {
@@ -319,7 +319,7 @@ class RekapKehadiranPerawat extends Component {
       return [
         index + 1,
         this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
+        obj.nama_analis,
         obj.nama_shift,
         obj.jam_masuk,
         obj.jam_keluar,
@@ -343,7 +343,7 @@ class RekapKehadiranPerawat extends Component {
       return [
         index + 1,
         this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
+        obj.nama_analis,
         obj.nama_pengganti,
         obj.nama_shift,
         obj.total_jam,
@@ -362,15 +362,17 @@ class RekapKehadiranPerawat extends Component {
       ];
     });
 
+    console.log("array", dataArrayString);
+
     const propertyNames = [
-      ["Rekap Kehadiran Staff Perawat " + this.state.namaKlinik],
+      ["Rekap Kehadiran Staff Analis " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
       [
         "No",
         "Tanggal",
-        "Nama Perawat",
+        "Nama Analis",
         "Nama Shift",
         "Jam Masuk",
         "jam Pulang",
@@ -387,14 +389,14 @@ class RekapKehadiranPerawat extends Component {
       ],
     ];
     const propertyNames2 = [
-      ["Rekap Kehadiran Staff Perawat Pengganti " + this.state.namaKlinik],
+      ["Rekap Kehadiran Staff Analis Pengganti " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
       [
         "No",
         "Tanggal",
-        "Nama Perawat",
+        "Nama Analis",
         "",
         "Nama Shift",
         "Total Jam Shift",
@@ -414,14 +416,14 @@ class RekapKehadiranPerawat extends Component {
       [
         "",
         "",
-        "Perawat Tetap",
-        "Perawat Pengganti",
+        "Analis Tetap",
+        "Analis Pengganti",
         "",
         "Jam Masuk",
         "Jam Pulang",
         "Durasi Telat",
         "Denda",
-        "Durasi Pulang Cepat",
+        "Pulang Cepat (Menit)",
         "Denda",
         "Uang Duduk",
         "Uang Insentif",
@@ -463,14 +465,14 @@ class RekapKehadiranPerawat extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Perawat ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Analis ${this.state.bulan} ${this.state.tahun}.csv`
     );
     const { dataExport2, judul2 } = this.state;
     // Flatten the array for csv
     const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
     this.downloadCSV(
       csvContent2,
-      `Data Rekap Kehadiran Perawat Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Analis Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
     );
   };
   formatTanggal = (tanggal) => {
@@ -496,7 +498,7 @@ class RekapKehadiranPerawat extends Component {
 
     const dataTabel = rekapKehadiran.map((item) => [
       item.tanggal,
-      item.nama_perawat,
+      item.nama_analis,
       item.nama_shift,
       item.telat ? (
         <div className="rounded bg-red-500 p-1 text-white">{`${item.telat} Menit`}</div>
@@ -515,7 +517,7 @@ class RekapKehadiranPerawat extends Component {
 
     const columnsData = [
       "Tanggal",
-      "Nama Perawat",
+      "Nama Analis",
       "Nama Shift",
       "Telat",
       "Nominal",
@@ -536,7 +538,7 @@ class RekapKehadiranPerawat extends Component {
           <div className="rounded-lg bg-white shadow-lg my-5">
             <div className="flex flex-col p-10">
               <h4 className="text-black font-bold text-xl">
-                Cari Rekapan per periode - Perawat Umum
+                Cari Rekapan per periode - Analis
               </h4>
               <br />
               <hr />
@@ -678,4 +680,4 @@ class RekapKehadiranPerawat extends Component {
   }
 }
 
-export default RekapKehadiranPerawat;
+export default RekapKehadiranAnalis;

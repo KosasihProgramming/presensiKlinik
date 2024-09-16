@@ -29,6 +29,8 @@ import DataPegawai from "./pages/dataPegawai";
 import ModalAddIzin from "./components/modalIzin";
 import IzinPage from "./pages/izinPage";
 import SendedForm from "./components/succes";
+import RekapKehadiranAnalis from "./pages/rekapKehadiran/RekapAnalis";
+import RekapKehadiranApoteker from "./pages/rekapKehadiran/RekapApoteker";
 
 function App() {
   const isLoggedIn = sessionStorage.getItem("user");
@@ -84,6 +86,15 @@ function App() {
                 path="/rekap-kehadiran-perawat"
                 Component={RekapKehadiranPerawat}
               />
+
+              <Route
+                path="/rekap-kehadiran-apoteker"
+                Component={RekapKehadiranApoteker}
+              />
+              <Route
+                path="/rekap-kehadiran-analis"
+                Component={RekapKehadiranAnalis}
+              />
               <Route
                 path="/rekap-kehadiran-perawat-gigi"
                 Component={RekapKehadiranPerawatGigi}
@@ -93,7 +104,7 @@ function App() {
                 Component={RekapKehadiranFarmasi}
               />
               <Route
-                path="/rekap-kehadiran-pegawai-kantor"
+                path="/rekap-kehadiran-cs"
                 Component={RekapKehadiranPegawai}
               />
               {/* Penggajian */}

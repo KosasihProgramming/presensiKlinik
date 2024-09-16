@@ -226,6 +226,7 @@ class RekapKehadiranPerawatGigi extends Component {
         if (!acc[item.productid]) {
           acc[item.productid] = {
             productid: item.productid,
+            formula: item.formula,
             nama: item.name,
             count: 0,
             cost: item.costprice,
@@ -256,20 +257,23 @@ class RekapKehadiranPerawatGigi extends Component {
       const sortedResult = result.sort((a, b) =>
         a.productid.localeCompare(b.productid)
       );
+      const resultFilter = sortedResult.filter(
+        (a) => !a.nama.includes("JASA PENDAFTARAN")
+      );
 
       const totalPrice = dataFilter.reduce(
         (total, detail) => total + detail.net,
         0
       );
-      const totalCost = sortedResult.reduce(
+      const totalCost = resultFilter.reduce(
         (total, detail) => total + Math.round(detail.totalLaba, 4),
         0
       );
-      const komisi = sortedResult.reduce(
+      const komisi = resultFilter.reduce(
         (total, detail) => total + Math.round(detail.totalKomisi, 4),
         0
       );
-      console.log(sortedResult);
+      console.log(resultFilter);
       console.log("total gross", totalGrossAmount);
       console.log("total net", totalNetAmount);
       console.log("total Price", totalPrice);
@@ -321,10 +325,12 @@ class RekapKehadiranPerawatGigi extends Component {
         obj.jam_masuk,
         obj.jam_keluar,
         obj.telat,
+        obj.denda_telat,
+        obj.pulang_cepat,
+        obj.denda_pulang_cepat,
         obj.total_jam,
         obj.nominal_shift,
         obj.komisi,
-        obj.denda_telat,
         parseInt(obj.nominal_shift) -
           parseInt(obj.denda_telat) +
           parseInt(obj.komisi),
@@ -347,6 +353,8 @@ class RekapKehadiranPerawatGigi extends Component {
         obj.komisi,
         obj.telat,
         obj.denda_telat,
+        obj.pulang_cepat,
+        obj.denda_pulang_cepat,
         parseInt(obj.nominal_shift) -
           parseInt(obj.denda_telat) +
           parseInt(obj.komisi),
@@ -355,7 +363,7 @@ class RekapKehadiranPerawatGigi extends Component {
     });
 
     const propertyNames = [
-      ["Rekap Kehadiran Staff Perawat " + this.state.namaKlinik],
+      ["Rekap Kehadiran Staff Perawat Gigi " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
@@ -367,17 +375,19 @@ class RekapKehadiranPerawatGigi extends Component {
         "Jam Masuk",
         "jam Pulang",
         "Telat (Menit)",
+        "Denda Telat",
+        "Pulang Cepat (Menit)",
+        "Denda Pulang Cepat",
         "Total Jam Shift",
         "Nominal Kehadiran",
         "Nominal Komisi",
-        "Denda Telat",
         "Total Nominal Kehadiran",
         "Nama Petugas",
         "Keterangan",
       ],
     ];
     const propertyNames2 = [
-      ["Rekap Kehadiran Staff Perawat Pengganti " + this.state.namaKlinik],
+      ["Rekap Kehadiran Staff Perawat Gigi Pengganti " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
@@ -391,7 +401,9 @@ class RekapKehadiranPerawatGigi extends Component {
 
         "Jam",
         "",
-        "Telat",
+        "Pot. Kehadiran",
+        "",
+        "",
         "",
         "Gaji",
         "",
@@ -407,7 +419,9 @@ class RekapKehadiranPerawatGigi extends Component {
         "",
         "Jam Masuk",
         "Jam Pulang",
-        "Durasi",
+        "Durasi Telat",
+        "Denda",
+        "Durasi Pulang Cepat",
         "Denda",
         "Uang Duduk",
         "Uang Insentif",
@@ -449,14 +463,14 @@ class RekapKehadiranPerawatGigi extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Perawat ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Perawat Gigi ${this.state.bulan} ${this.state.tahun}.csv`
     );
     const { dataExport2, judul2 } = this.state;
     // Flatten the array for csv
     const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
     this.downloadCSV(
       csvContent2,
-      `Data Rekap Kehadiran Perawat Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Perawat Gigi Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
     );
   };
   formatTanggal = (tanggal) => {
@@ -613,7 +627,7 @@ class RekapKehadiranPerawatGigi extends Component {
                         <button
                           type="submit"
                           className="btn-input custom-btn btn-15"
-                          onClick={this.downloadCSV}
+                          onClick={this.handleExport}
                           style={{
                             display: "flex",
                             justifyContent: "center",

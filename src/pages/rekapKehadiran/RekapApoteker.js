@@ -38,7 +38,7 @@ const formatCurrency = (number) => {
   }).format(number);
 };
 
-class RekapKehadiranPerawat extends Component {
+class RekapKehadiranApoteker extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -71,7 +71,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get`,
+        `${urlAPI}/rekap-kehadiran-apoteker/get`,
         arg,
         {
           headers: {
@@ -89,7 +89,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/delete`,
+        `${urlAPI}/rekap-kehadiran-apoteker/delete`,
         arg,
         {
           headers: {
@@ -108,7 +108,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-apoteker/cek`,
         arg,
         {
           headers: {
@@ -128,7 +128,7 @@ class RekapKehadiranPerawat extends Component {
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-apoteker/cek`,
         arg,
         {
           headers: {
@@ -150,141 +150,6 @@ class RekapKehadiranPerawat extends Component {
     }
   };
 
-  getDataKomisi = async (tanggal, barcode) => {
-    const arg = { tanggal, barcode };
-
-    try {
-      const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get-insentif`,
-        arg,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      // Proses untuk menghitung total dan menambahkan properti baru
-      const sales = response.data;
-      const data = sales.forEach((sale) => {
-        const totalGrossAmount = sale.salesdetail.reduce(
-          (total, detail) => total + detail.grossamount,
-          0
-        );
-        const totalNetAmount = sale.salesdetail.reduce(
-          (total, detail) => total + detail.netamount,
-          0
-        );
-        const totalPrice = sale.salesdetail.reduce(
-          (total, detail) => total + detail.price,
-          0
-        );
-        const cost = sale.salesdetail.reduce(
-          (total, detail) => total + detail.price - detail.costprice,
-          0
-        );
-        // Menambahkan total ke dalam properti baru pada objek sales
-        sale.totalGrossAmount = totalGrossAmount;
-        sale.totalNetAmount = totalNetAmount;
-        sale.totalPrice = totalPrice;
-        sale.totalCost = cost;
-        sale.totalDetail = sale.salesdetail.length;
-      });
-
-      const dataFilter = sales.map((a) => {
-        return {
-          gross: a.totalGrossAmount,
-          net: a.totalNetAmount,
-          price: a.totalPrice,
-          cost: a.totalCost,
-          total: a.totalDetail,
-          man: a.salesmanid,
-        };
-      });
-      const totalGrossAmount = dataFilter.reduce(
-        (total, detail) => total + detail.gross,
-        0
-      );
-      const totalNetAmount = dataFilter.reduce(
-        (total, detail) => total + detail.net,
-        0
-      );
-
-      console.log(sales);
-      const total = dataFilter.reduce((a, detail) => a + detail.total, 0);
-      // Menggabungkan semua objek dalam detailSales menjadi satu array
-      // Menggabungkan semua objek dalam detailSales menjadi satu array
-      const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
-
-      const cleanedData = allDetailSales.map((item) => ({
-        ...item,
-        formula: item.formula.replace("v.ProductQuantity*", ""), // Menghapus kata "Tahun"
-      }));
-      // Mengelompokkan berdasarkan productid dan menghitung jumlahnya
-      // Mengelompokkan berdasarkan productid dan menghitung jumlahnya serta menjumlahkan nilai lainnya
-      const groupedByProductId = cleanedData.reduce((acc, item) => {
-        // Jika productid belum ada di accumulator, inisialisasi
-        if (!acc[item.productid]) {
-          acc[item.productid] = {
-            productid: item.productid,
-            nama: item.name,
-            count: 0,
-            cost: item.costprice,
-            price: item.price,
-            totalCost: 0,
-            totalPrice: 0,
-            totalLaba: 0,
-            totalKomisi: 0,
-          };
-        }
-
-        // Menambahkan jumlah kemunculan
-        acc[item.productid].count += 1;
-
-        // Menambahkan total grossamount, netamount, dan price
-        acc[item.productid].totalCost += item.costprice * item.salesqty;
-        acc[item.productid].totalPrice += item.price * item.salesqty;
-        acc[item.productid].totalLaba += Math.abs(
-          item.price * item.salesqty - item.costprice * item.salesqty
-        );
-        acc[item.productid].totalKomisi +=
-          parseInt(item.formula) * item.salesqty;
-        return acc;
-      }, {});
-
-      // Mengonversi hasil menjadi array
-      const result = Object.values(groupedByProductId);
-      const sortedResult = result.sort((a, b) =>
-        a.productid.localeCompare(b.productid)
-      );
-      const resultFilter = sortedResult.filter(
-        (a) => !a.nama.includes("PERIKSA DOKTER")
-      );
-
-      const totalPrice = dataFilter.reduce(
-        (total, detail) => total + detail.net,
-        0
-      );
-      const totalCost = resultFilter.reduce(
-        (total, detail) => total + Math.round(detail.totalLaba, 4),
-        0
-      );
-      const komisi = resultFilter.reduce(
-        (total, detail) => total + Math.round(detail.totalKomisi, 4),
-        0
-      );
-      console.log(resultFilter);
-      console.log("total gross", totalGrossAmount);
-      console.log("total net", totalNetAmount);
-      console.log("total Price", totalPrice);
-      console.log("total Cost", totalCost);
-      console.log("total Commision", komisi);
-      console.log(sales);
-      console.log(allDetailSales);
-      return komisi;
-    } catch (error) {
-      console.log("Error pada tanggal:", error);
-    }
-  };
   handleSearch = (e) => {
     e.preventDefault();
     this.setState({ isProses: true });
@@ -300,132 +165,88 @@ class RekapKehadiranPerawat extends Component {
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
 
-    // Gunakan Promise.all untuk menangani operasi asynchronous
-    const updatedData = await Promise.all(
-      sortedData.map(async (item) => {
-        const komisi = await this.getDataKomisi(
-          item.tanggal,
-          item.servicedoerid
-        ); // Tunggu hasil getDataKomisi
-        return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
-      })
-    );
+    const groupedByProductId = sortedData.reduce((acc, item) => {
+      // Jika productid belum ada di accumulator, inisialisasi
+      if (!acc[item.barcode]) {
+        acc[item.barcode] = {
+          barcode: item.barcode,
+          nama: item.nama_apoteker,
+          count: 0,
+          gaji: 0,
+          transport: 0,
+        };
+      }
 
-    console.log(updatedData, "sort");
+      // Menambahkan jumlah kemunculan
+      acc[item.barcode].count += 1;
 
-    const dataPengganti = sortedData.filter((a) => a.nama_pengganti !== "");
+      // Menambahkan total grossamount, netamount, dan price
+      acc[item.barcode].transport += item.total_jam;
+      acc[item.barcode].pulangcepat += item.pulang_cepat;
+      acc[item.barcode].telat += item.telat;
+      acc[item.barcode].dendaTelat += item.denda_telat;
+      acc[item.barcode].dendaPulangCepat += item.denda_pulang_cepat;
+      return acc;
+    }, {});
 
-    const dataArrayString = updatedData.map((obj, index) => {
+    // Mengonversi hasil menjadi array
+    const result = Object.values(groupedByProductId);
+    console.log("result", result);
+    const dataMonth = this.transformData(result);
+
+    const dataArray = sortedData.map((obj, index) => {
       return [
         index + 1,
         this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
+        obj.nama_apoteker,
         obj.nama_shift,
         obj.jam_masuk,
         obj.jam_keluar,
-        obj.telat,
+
         obj.total_jam,
-        obj.nominal_shift,
-        obj.komisi,
-        obj.denda_telat,
-        parseInt(obj.nominal_shift) -
-          parseInt(obj.denda_telat) +
-          parseInt(obj.komisi),
         obj.nama_petugas,
         obj.keterangan,
       ];
     });
 
-    const dataArrayPengganti = dataPengganti.map((obj, index) => {
-      return [
-        index + 1,
-        this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
-        obj.nama_pengganti,
-        obj.nama_shift,
-        obj.total_jam,
-        obj.jam_masuk,
-        obj.jam_keluar,
-        obj.nominal_shift,
-        obj.komisi,
-        obj.telat,
-        obj.denda_telat,
-        parseInt(obj.nominal_shift) -
-          parseInt(obj.denda_telat) +
-          parseInt(obj.komisi),
-        obj.nama_petugas,
-      ];
-    });
-
     const propertyNames = [
-      ["Rekap Kehadiran Staff Perawat " + this.state.namaKlinik],
+      ["Usulan Uang Transport Staff Apoteker " + this.state.namaKlinik],
+      [""],
+      [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
+      [""],
+      [
+        "No",
+        "Nama Apoteker",
+        "Variabel",
+        "Total Jam Kerja",
+        "Uang Transport Perjam",
+        "Pendapatan",
+      ],
+    ];
+
+    const propertyNames2 = [
+      ["Rekap Detail Kehadiran Staff Apoteker " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
       [
         "No",
         "Tanggal",
-        "Nama Perawat",
+        "Nama Apoteker",
         "Nama Shift",
         "Jam Masuk",
         "jam Pulang",
-        "Telat (Menit)",
-        "Total Jam Shift",
-        "Nominal Kehadiran",
-        "Nominal Komisi",
-        "Denda Telat",
-        "Total Nominal Kehadiran",
+        "Total Jam",
         "Nama Petugas",
         "Keterangan",
       ],
     ];
-    const propertyNames2 = [
-      ["Rekap Kehadiran Staff Perawat Pengganti " + this.state.namaKlinik],
-      [""],
-      [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
-      [""],
-      [
-        "No",
-        "Tanggal",
-        "Nama Perawat",
-        "",
-        "Nama Shift",
-        "Total Jam Shift",
-
-        "Jam",
-        "",
-        "Telat",
-        "",
-        "Gaji",
-        "",
-        "Total",
-        "Petugas",
-        "",
-      ],
-      [
-        "",
-        "",
-        "Perawat Tetap",
-        "Perawat Pengganti",
-        "",
-        "Jam Masuk",
-        "Jam Pulang",
-        "Durasi",
-        "Denda",
-        "Uang Duduk",
-        "Uang Insentif",
-        "",
-        "Nama",
-        "Paraf",
-      ],
-    ];
-
     // Set data ke state
     this.setState({
       judul: propertyNames,
       judul2: propertyNames2,
-      dataExport: dataArrayString,
-      dataExport2: dataArrayPengganti,
+      dataExport: dataMonth,
+      dataExport2: dataArray,
     });
   };
 
@@ -452,14 +273,14 @@ class RekapKehadiranPerawat extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Perawat ${this.state.bulan} ${this.state.tahun}.csv`
+      `Usulan Uang Transport Apoteker ${this.state.bulan} ${this.state.tahun}.csv`
     );
     const { dataExport2, judul2 } = this.state;
     // Flatten the array for csv
     const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
     this.downloadCSV(
       csvContent2,
-      `Data Rekap Kehadiran Perawat Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Apoteker ${this.state.bulan} ${this.state.tahun}.csv`
     );
   };
   formatTanggal = (tanggal) => {
@@ -480,12 +301,36 @@ class RekapKehadiranPerawat extends Component {
     const formattedJam1 = formatTime(jam);
     return formattedJam1;
   };
+
+  transformData = (arr) => {
+    return arr.flatMap((item, index) => {
+      return [
+        [
+          index + 1, // Nomor urut
+          item.nama, // Nama dengan huruf pertama kapital
+          "Gaji Pokok",
+          "",
+          "",
+          "",
+        ],
+        [
+          "",
+          "Uang Transport",
+          item.transport > 40 ? 40 : item.transport,
+          0,
+          12500,
+          item.transport > 40 ? 40 * 12500 : item.transport * 12500,
+        ],
+      ];
+    });
+  };
+
   render() {
     const { rekapKehadiran } = this.state;
 
     const dataTabel = rekapKehadiran.map((item) => [
       item.tanggal,
-      item.nama_perawat,
+      item.nama_apoteker,
       item.nama_shift,
       item.telat ? (
         <div className="rounded bg-red-500 p-1 text-white">{`${item.telat} Menit`}</div>
@@ -504,7 +349,7 @@ class RekapKehadiranPerawat extends Component {
 
     const columnsData = [
       "Tanggal",
-      "Nama Perawat",
+      "Nama Apoteker",
       "Nama Shift",
       "Telat",
       "Nominal",
@@ -525,7 +370,7 @@ class RekapKehadiranPerawat extends Component {
           <div className="rounded-lg bg-white shadow-lg my-5">
             <div className="flex flex-col p-10">
               <h4 className="text-black font-bold text-xl">
-                Cari Rekapan per periode - Perawat Umum
+                Cari Rekapan per periode - Apoteker
               </h4>
               <br />
               <hr />
@@ -667,4 +512,4 @@ class RekapKehadiranPerawat extends Component {
   }
 }
 
-export default RekapKehadiranPerawat;
+export default RekapKehadiranApoteker;

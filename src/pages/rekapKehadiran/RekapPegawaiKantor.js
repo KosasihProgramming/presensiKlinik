@@ -215,16 +215,17 @@ class RekapKehadiranPegawai extends Component {
         obj.jam_masuk,
         obj.jam_keluar,
         obj.telat,
-        parseInt(obj.izin),
+        parseInt(obj.pulang_cepat),
         obj.jenis,
-        // obj.nominal_shift,
+        obj.nominal_shift,
         obj.denda_telat,
-        // parseInt(obj.nominal_shift) - parseInt(obj.denda_telat),
+        obj.denda_pulang_cepat,
+        parseInt(obj.nominal_shift) - parseInt(obj.denda_telat),
       ];
     });
 
     const propertyNames = [
-      ["Rekap Kehadiran Staff kantor Pusat"],
+      ["Rekap Kehadiran Staff Customer Service"],
       [""],
 
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
@@ -237,11 +238,12 @@ class RekapKehadiranPegawai extends Component {
         "Jam Masuk",
         "Jam Pulang",
         "Telat (Menit)",
-        "Izin (Menit)",
+        "Pulang Cepat (Menit)",
         "status",
-        // "Nominal Kehadiran",
+        "Nominal Kehadiran",
         "Denda Telat",
-        // "Total Nominal Kehadiran",
+        "Denda Pulang Cepat",
+        "Total Nominal Kehadiran",
       ],
     ];
 
@@ -271,7 +273,7 @@ class RekapKehadiranPegawai extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Staff Kantor ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Staff CS ${this.state.bulan} ${this.state.tahun}.csv`
     );
   };
   formatTanggal = (tanggal) => {

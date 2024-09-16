@@ -21,7 +21,7 @@ const notLoggedInNavItems = [
 
 const masterData = [
   { name: "Rekap Kehadiran Dokter", href: "/rekap-kehadiran-dokter" },
-  { name: "Rekap Kehadiran Dokter Gigi", href: "/rekap-kehadiran-dokter-gigi" },
+  // { name: "Rekap Kehadiran Dokter Gigi", href: "/rekap-kehadiran-dokter-gigi" },
   { name: "Rekap Kehadiran Perawat", href: "/rekap-kehadiran-perawat" },
   {
     name: "Rekap Kehadiran Perawat Gigi",
@@ -31,10 +31,10 @@ const masterData = [
   { name: "Rekap Kehadiran Apoteker", href: "/rekap-kehadiran-apoteker" },
   { name: "Rekap Kehadiran Analis", href: "/rekap-kehadiran-analis" },
   { name: "Rekap Kehadiran CS", href: "/rekap-kehadiran-cs" },
-  {
-    name: "Rekap Kehadiran Pegawai Kantor",
-    href: "/rekap-kehadiran-pegawai-kantor",
-  },
+  // {
+  //   name: "Rekap Kehadiran Pegawai Kantor",
+  //   href: "/rekap-kehadiran-pegawai-kantor",
+  // },
 ];
 
 function classNames(...classes) {

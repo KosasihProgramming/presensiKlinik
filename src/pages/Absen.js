@@ -333,59 +333,85 @@ class Absen extends Component {
         focusCancel: true,
       });
     } else {
-      const jabatan = await this.cekJabatan(pegawai);
-      if (jabatan == true) {
-        if (pindahKlinik === 1) {
-          if (telatMenit > 0 && telatMenit <= 30) {
-            denda = 7500;
-          } else if (telatMenit > 30) {
-            const durasi = telatMenit - 30;
-            if (durasi > 0 && durasi <= 4) {
-              denda = 2500 + 7500;
+      console.log("pegawi", pegawai);
+      if (!pegawai[0].nik.includes("AP")) {
+        const jabatan = await this.cekJabatan(pegawai[0]);
+        if (jabatan == true) { 
+          if (pindahKlinik === 1) {
+            if (telatMenit > 0 && telatMenit <= 30) {
+              denda = 7500;
+            } else if (telatMenit > 30) {
+              const durasi = telatMenit - 30;
+              if (durasi > 0 && durasi <= 4) {
+                denda = 2500 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 4 && durasi <= 9) {
+                denda = 5000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 9 && durasi <= 19) {
+                denda = 10000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 19 && durasi <= 29) {
+                denda = 20000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 29) {
+                denda = (durasi - 29) * 1000 + 20000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              }
+            }
+          }
+          // Akhir logic aturan denda pindah klinik
+          // Logic Aturan Denda Normal
+          else if (pindahKlinik === 0) {
+            if (telatMenit <= 0) {
+              denda = 0;
+            } else if (telatMenit > 0 && telatMenit <= 4) {
+              denda = 2500;
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
               await this.sendMessageToTelegram(message, thread, chatId);
-            } else if (durasi > 4 && durasi <= 9) {
-              denda = 5000 + 7500;
+            } else if (telatMenit > 4 && telatMenit <= 9) {
+              denda = 5000;
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
               await this.sendMessageToTelegram(message, thread, chatId);
-            } else if (durasi > 9 && durasi <= 19) {
-              denda = 10000 + 7500;
+            } else if (telatMenit > 9 && telatMenit <= 19) {
+              denda = 10000;
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
               await this.sendMessageToTelegram(message, thread, chatId);
-            } else if (durasi > 19 && durasi <= 29) {
-              denda = 20000 + 7500;
+            } else if (telatMenit > 19 && telatMenit <= 29) {
+              denda = 20000;
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
               await this.sendMessageToTelegram(message, thread, chatId);
-            } else if (durasi > 29) {
-              denda = (durasi - 29) * 1000 + 20000 + 7500;
+            } else if (telatMenit > 29) {
+              denda = (telatMenit - 29) * 1000 + 20000;
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            } else if (!idDetailJadwal) {
+              const message = `${this.state.namaPegawai} tidak ada jadwal & berusaha melakukan absen di ${namaKlinik}`;
               await this.sendMessageToTelegram(message, thread, chatId);
             }
           }
-        }
-        // Akhir logic aturan denda pindah klinik
-        // Logic Aturan Denda Normal
-        else if (pindahKlinik === 0) {
+        } else {
           if (telatMenit <= 0) {
             denda = 0;
           } else if (telatMenit > 0 && telatMenit <= 4) {
             denda = 2500;
             const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
             await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 4 && telatMenit <= 9) {
-            denda = 5000;
-            const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 9 && telatMenit <= 19) {
+          } else if (telatMenit > 4 && telatMenit <= 14) {
             denda = 10000;
             const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
             await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 19 && telatMenit <= 29) {
-            denda = 20000;
+          } else if (telatMenit > 14 && telatMenit <= 29) {
+            denda = 15000;
             const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
             await this.sendMessageToTelegram(message, thread, chatId);
           } else if (telatMenit > 29) {
-            denda = (telatMenit - 29) * 1000 + 20000;
+            denda = 25000;
             const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
             await this.sendMessageToTelegram(message, thread, chatId);
           } else if (!idDetailJadwal) {
@@ -393,30 +419,8 @@ class Absen extends Component {
             await this.sendMessageToTelegram(message, thread, chatId);
           }
         }
-      } else {
-        if (telatMenit <= 0) {
-          denda = 0;
-        } else if (telatMenit > 0 && telatMenit <= 4) {
-          denda = 2500;
-          const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
-          await this.sendMessageToTelegram(message, thread, chatId);
-        } else if (telatMenit > 4 && telatMenit <= 14) {
-          denda = 10000;
-          const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
-          await this.sendMessageToTelegram(message, thread, chatId);
-        } else if (telatMenit > 14 && telatMenit <= 29) {
-          denda = 15000;
-          const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
-          await this.sendMessageToTelegram(message, thread, chatId);
-        } else if (telatMenit > 29) {
-          denda = 25000;
-          const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
-          await this.sendMessageToTelegram(message, thread, chatId);
-        } else if (!idDetailJadwal) {
-          const message = `${this.state.namaPegawai} tidak ada jadwal & berusaha melakukan absen di ${namaKlinik}`;
-          await this.sendMessageToTelegram(message, thread, chatId);
-        }
       }
+
       // Logic aturan denda pindah klinik
 
       // Akhir logic denda Normal

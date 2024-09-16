@@ -129,7 +129,7 @@ const Pulang = () => {
             .patch(`${urlAPI}/kehadiran/${idKehadiran}`, {
               foto_keluar: fotoKeluar,
               jam_masuk: state.jamMasuk,
-              jam_keluar: jamKeluar,
+              jam_keluar: state.jamKeluarShift,
               isIzin: state.isIzin,
               ket:
                 state.ket == null
