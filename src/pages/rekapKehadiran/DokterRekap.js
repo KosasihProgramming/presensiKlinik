@@ -116,7 +116,6 @@ class RekapKehadiranDokter extends Component {
           },
         }
       );
-      this.setState({ rekapKehadiran: response.data });
       this.formatCSVData(response.data);
     } catch (error) {
       console.log("Error pada tanggal:", error);
@@ -336,12 +335,12 @@ class RekapKehadiranDokter extends Component {
         obj.nama_shift,
         obj.jam_masuk,
         obj.jam_pulang,
-        obj.nominal_shift,
-        obj.komisi,
         obj.telat,
         obj.denda_telat,
         obj.pulang_cepat,
         obj.denda_pulang_cepat,
+        obj.nominal_shift,
+        obj.komisi,
         parseInt(obj.nominal_shift) -
           parseInt(obj.denda_telat) +
           parseInt(obj.komisi),
@@ -413,6 +412,7 @@ class RekapKehadiranDokter extends Component {
         "Paraf",
       ],
     ];
+    this.setState({ rekapKehadiran: data });
 
     // Set data ke state
     this.setState({

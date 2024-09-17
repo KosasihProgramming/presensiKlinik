@@ -117,7 +117,6 @@ class RekapKehadiranFarmasi extends Component {
           },
         }
       );
-      this.setState({ rekapKehadiran: response.data });
       this.formatCSVData(response.data);
     } catch (error) {
       console.log("Error pada tanggal:", error);
@@ -427,6 +426,7 @@ class RekapKehadiranFarmasi extends Component {
       dataExport2: dataArray,
       footer: foot,
     });
+    this.setState({ rekapKehadiran: data });
   };
 
   convertToCSV = (array) => {

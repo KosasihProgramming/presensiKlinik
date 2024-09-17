@@ -315,9 +315,9 @@ class RekapKehadiranApoteker extends Component {
         ],
         [
           "",
+          "",
           "Uang Transport",
           item.transport > 40 ? 40 : item.transport,
-          0,
           12500,
           item.transport > 40 ? 40 * 12500 : item.transport * 12500,
         ],
