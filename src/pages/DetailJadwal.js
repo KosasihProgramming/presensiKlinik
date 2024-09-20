@@ -282,7 +282,7 @@ class DetailJadwal extends Component {
       tanggalAkhirOtomatis
     );
 
-    console.log(rentangTanggal);
+    console.log("rentang",rentangTanggal);
 
     // Cek kelengkapan form
     if (!idShift || !idJadwal || rentangTanggal.length === 0) {
@@ -303,6 +303,7 @@ class DetailJadwal extends Component {
         tanggal,
       };
 
+      console.log(postData);
       const dataExists = dataDetail.some((jadwal) => {
         // Membandingkan idShift dan tanggal dengan data yang ada
         return jadwal.id_shift === idShift && jadwal.tanggal === tanggal;
@@ -582,7 +583,6 @@ class DetailJadwal extends Component {
       });
   };
 
-  
   handleSelect = (name, selectedOption) => {
     // Update state with selected option dynamically based on dropdown name
     let kode = "";

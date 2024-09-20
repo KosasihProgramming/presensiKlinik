@@ -328,12 +328,10 @@ class RekapKehadiranAnalis extends Component {
         obj.pulang_cepat,
         obj.denda_pulang_cepat,
         obj.total_jam,
-        obj.nominal_shift,
+        0,
         obj.komisi,
 
-        parseInt(obj.nominal_shift) -
-          parseInt(obj.denda_telat) +
-          parseInt(obj.komisi),
+        0,
         obj.nama_petugas,
         obj.keterangan,
       ];
@@ -349,15 +347,13 @@ class RekapKehadiranAnalis extends Component {
         obj.total_jam,
         obj.jam_masuk,
         obj.jam_keluar,
-        obj.nominal_shift,
+        0,
         obj.komisi,
         obj.telat,
         obj.denda_telat,
         obj.pulang_cepat,
         obj.denda_pulang_cepat,
-        parseInt(obj.nominal_shift) -
-          parseInt(obj.denda_telat) +
-          parseInt(obj.komisi),
+        0,
         obj.nama_petugas,
       ];
     });
