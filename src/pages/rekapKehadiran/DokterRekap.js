@@ -322,6 +322,7 @@ class RekapKehadiranDokter extends Component {
         obj.nominal_shift,
         obj.komisi,
         parseInt(obj.nominal_shift) - parseInt(obj.denda_telat),
+        obj.keterangan,
         obj.nama_petugas,
       ];
     });
@@ -367,6 +368,7 @@ class RekapKehadiranDokter extends Component {
         "Nominal Kehadiran",
         "Nominal Komisi",
         "Total Nominal Kehadiran",
+        "Keterangan",
         "Nama Petugas",
       ],
     ];

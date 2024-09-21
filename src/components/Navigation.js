@@ -119,7 +119,7 @@ const Navigation = (props) => {
                               "rounded-md px-3 py-2 text-sm font-medium"
                             )}
                           >
-                            Master Data
+                           Rekap Kehadiran
                           </Menu.Button>
 
                           <Menu.Items className="origin-top-left absolute mt-2 left-[30%] w-50 rounded-md shadow-lg bg-white top-[75%] z-[9999] ring-1 ring-black ring-opacity-5 focus:outline-none">

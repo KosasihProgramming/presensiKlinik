@@ -90,7 +90,7 @@ class DetailJadwal extends Component {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0"); // Menambahkan angka 0 di depan untuk bulan dengan satu digit
       const day = String(date.getDate()).padStart(2, "0"); // Menambahkan angka 0 di depan untuk hari dengan satu digit
-      return `${year}-${month}-${day}`;
+      return `${year}/${month}/${day}`;
     });
 
     this.setState({ kalender: formattedDates });
@@ -282,7 +282,7 @@ class DetailJadwal extends Component {
       tanggalAkhirOtomatis
     );
 
-    console.log("rentang",rentangTanggal);
+    console.log("rentang", rentangTanggal);
 
     // Cek kelengkapan form
     if (!idShift || !idJadwal || rentangTanggal.length === 0) {

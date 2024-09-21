@@ -209,6 +209,7 @@ class Absen extends Component {
   };
 
   sendMessageToTelegram = async (message, thread, chatId) => {
+    console.log(message, thread, chatId);
     try {
       const botToken = "bot6823587684:AAE4Ya6Lpwbfw8QxFYec6xAqWkBYeP53MLQ";
 
@@ -319,8 +320,13 @@ class Absen extends Component {
       tanggalHariIni,
       this.state.selectedJadwal.tanggal
     );
+    console.log(this.state.selectedJadwal, "jadwal terpilih");
 
-    if (cekJam == true) {
+    if (
+      cekJam == true &&
+      this.state.selectedJadwal.jam_masuk !=
+        this.state.selectedJadwal.jam_pulang
+    ) {
       this.setState({ isProses: false });
       await this.handleHadir();
       await Swal.fire({
@@ -336,7 +342,7 @@ class Absen extends Component {
       console.log("pegawi", pegawai);
       if (!pegawai[0].nik.includes("AP")) {
         const jabatan = await this.cekJabatan(pegawai[0]);
-        if (jabatan == true) { 
+        if (jabatan == true) {
           if (pindahKlinik === 1) {
             if (telatMenit > 0 && telatMenit <= 30) {
               denda = 7500;
@@ -344,6 +350,7 @@ class Absen extends Component {
               const durasi = telatMenit - 30;
               if (durasi > 0 && durasi <= 4) {
                 denda = 2500 + 7500;
+
                 const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${namaKlinik}`;
                 await this.sendMessageToTelegram(message, thread, chatId);
               } else if (durasi > 4 && durasi <= 9) {
@@ -475,6 +482,18 @@ class Absen extends Component {
             reverseButtons: true,
             focusCancel: true,
           });
+          if (denda > 0) {
+            Swal.fire({
+              icon: "error",
+              title: "Gagal",
+              text: `Anda Terkena Denda Telat Sebesar ${this.formatRupiah(
+                denda
+              )}`,
+              focusConfirm: false,
+              reverseButtons: true,
+              focusCancel: true,
+            });
+          }
           this.setState({ isProses: false });
         })
         .catch((error) => {
@@ -498,6 +517,8 @@ class Absen extends Component {
       jam_masuk: this.state.selectedJadwal.jam_masuk,
       jam_keluar: this.state.selectedJadwal.jam_pulang,
       lokasiAbsen: this.state.lokasiAbsen,
+      ket: "Alpha / Tidak Presensi",
+      petugas: this.state.namaPetugas,
     };
     console.log(absenMasuk);
     axios.post(urlAPI + "/kehadiran/absen-izin", absenMasuk);
@@ -674,6 +695,19 @@ class Absen extends Component {
       return false;
     }
   }
+  formatRupiah = (angka) => {
+    var rupiah = "";
+    var angkaRev = angka.toString().split("").reverse().join("");
+    for (var i = 0; i < angkaRev.length; i++)
+      if (i % 3 == 0) rupiah += angkaRev.substr(i, 3) + ".";
+    return (
+      "Rp " +
+      rupiah
+        .split("", rupiah.length - 1)
+        .reverse()
+        .join("")
+    );
+  };
   render() {
     console.log("jadwal", this.state.dataJadwalHariIni);
     return (
@@ -798,7 +832,7 @@ class Absen extends Component {
                         className="form-checkbox h-5 w-5 text-blue-600"
                       />
                       <label className="ml-2 text-gray-700">
-                        Saya Dokter Pengganti
+                        Saya Pengganti Dari Luar Klinik
                       </label>
                     </div>
                     <input
