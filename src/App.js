@@ -176,7 +176,6 @@ function App() {
                     Component={RekapShiftPerawatUmum}
                   />
                   <Route path="/data-pegawai" Component={DataPegawai} />
-                  <Route path="/device" Component={LocalStorage} />
                 </>
               ) : (
                 <>
@@ -194,9 +193,19 @@ function App() {
         </>
       ) : (
         <>
-          <div className="w-full h-[100vh] flex justify-center items-center text-xl font-bold">
-            <p>Anda tidak memiliki akses ke Sistem ini</p>
-          </div>
+          <Router>
+            <Routes>
+              <Route
+                path="/"
+                Component={
+                  <div className="w-full h-[100vh] flex justify-center items-center text-xl font-bold">
+                    <p>Anda tidak memiliki akses ke Sistem ini</p>
+                  </div>
+                }
+              />
+              <Route path="/device-access-kosasih" Component={LocalStorage} />
+            </Routes>
+          </Router>
         </>
       )}
     </div>
