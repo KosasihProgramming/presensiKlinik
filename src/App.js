@@ -102,7 +102,7 @@ function App() {
   };
   return (
     <div className="bg-gray-200 pb-10">
-      {!isAkses ? (
+      {isAkses ? (
         <>
           <Router>
             <Navigation
