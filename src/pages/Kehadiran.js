@@ -16,30 +16,55 @@ class Kehadiran extends Component {
       dataKehadiran: [],
       dataKepulangan: [],
       dataIzin: [],
+      cabang: "",
       isSudahPulang: "tidak",
       tanggalFilter: new Date().toLocaleDateString(),
     };
   }
 
   componentDidMount = () => {
-    this.getAllDataKehadiran();
-    this.getAllDataKepulangan();
-    this.getAllDataIzin();
+    this.checkDevice();
   };
 
-  getAllDataKehadiran = () => {
+  checkDevice = async () => {
+    const storedEncodedText = localStorage.getItem("device");
+
+    console.log(storedEncodedText);
+
+    if (storedEncodedText) {
+      const postData = {
+        encode: storedEncodedText,
+      };
+
+      axios
+        .post(urlAPI + "/device/", postData)
+        .then((response) => {
+          console.log("Berhasil Di izinkan", response);
+          this.setState({ cabang: response.data[0].cabang });
+          this.getAllDataKehadiran(response.data[0].cabang);
+          this.getAllDataKepulangan(response.data[0].cabang);
+          this.getAllDataIzin(response.data[0].cabang);
+        })
+        .catch((error) => {
+          console.log("Error:", error);
+        });
+    }
+  };
+  getAllDataKehadiran = (cabang) => {
     axios
-      .get(urlAPI + "/kehadiran/now")
+      .post(urlAPI + `/kehadiran/now`, {
+        cabang: cabang, // Mengirim cabang melalui body request
+      })
       .then((response) => {
+        console.log(response);
         this.setState({ dataKehadiran: response.data });
-        // console.log("Belum pulang: ", response.data);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
   };
 
-  getAllDataIzin = () => {
+  getAllDataIzin = (cabang) => {
     axios
       .get(`${urlAPI}/kehadiran/izin/today`)
       .then((response) => {
@@ -52,9 +77,11 @@ class Kehadiran extends Component {
       });
   };
 
-  getAllDataKepulangan = () => {
+  getAllDataKepulangan = (cabang) => {
     axios
-      .get(`${urlAPI}/kehadiran/pulang/all`)
+      .post(`${urlAPI}/kehadiran/pulang/all`, {
+        cabang: cabang, // Mengirim cabang melalui body request
+      })
       .then((response) => {
         this.setState({ dataKepulangan: response.data });
         console.log("Sudah Pulang: ", response.data);
@@ -73,7 +100,7 @@ class Kehadiran extends Component {
     const tanggalParam = e.target.value;
     this.setState({ tanggalFilter: tanggalParam });
     axios
-      .get(`${urlAPI}/kehadiran/filter/${tanggalParam}`)
+      .get(`${urlAPI}/kehadiran/filter/${tanggalParam}/${this.state.cabang}`)
       .then((response) => {
         this.setState({ dataKepulangan: response.data });
       })
@@ -113,7 +140,7 @@ class Kehadiran extends Component {
         data.tanggal,
         <img
           className="w-24 rounded-full"
-          src={`${urlAPI}/uploads/${data.foto_masuk}`}
+          src={data.foto_masuk}
           alt={data.foto_masuk}
         />,
       ];

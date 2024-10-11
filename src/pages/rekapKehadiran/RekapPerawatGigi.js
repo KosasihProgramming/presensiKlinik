@@ -51,11 +51,12 @@ class RekapKehadiranPerawatGigi extends Component {
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
       namaKlinik: "",
+      cabang: "",
     };
   }
 
   componentDidMount() {
-    this.getKlinik();
+    // this.getKlinik();
   }
 
   getKlinik = async () => {
@@ -67,7 +68,8 @@ class RekapKehadiranPerawatGigi extends Component {
     }
   };
   getData = async (bulan, tahun) => {
-    const arg = { bulan, tahun };
+    const cabang = this.state.cabang;
+    const arg = { bulan, tahun, cabang };
 
     try {
       const response = await axios.post(
@@ -85,7 +87,8 @@ class RekapKehadiranPerawatGigi extends Component {
   };
 
   deleteData = async (bulan, tahun) => {
-    const arg = { bulan, tahun };
+    const cabang = this.state.cabang;
+    const arg = { bulan, tahun, cabang };
 
     try {
       const response = await axios.post(
@@ -104,7 +107,8 @@ class RekapKehadiranPerawatGigi extends Component {
   };
 
   ambilData = async (bulan, tahun) => {
-    const arg = { bulan, tahun };
+    const cabang = this.state.cabang;
+    const arg = { bulan, tahun, cabang };
 
     try {
       const response = await axios.post(
@@ -124,7 +128,8 @@ class RekapKehadiranPerawatGigi extends Component {
   };
 
   cekData = async (bulan, tahun) => {
-    const arg = { bulan, tahun };
+    const cabang = this.state.cabang;
+    const arg = { bulan, tahun, cabang };
 
     try {
       const response = await axios.post(
@@ -151,7 +156,9 @@ class RekapKehadiranPerawatGigi extends Component {
   };
 
   getDataKomisi = async (tanggal, barcode) => {
-    const arg = { tanggal, barcode };
+    const cabang = this.state.cabang;
+
+    const arg = { tanggal: tanggal, barcode: barcode, cabang: cabang };
 
     try {
       const response = await axios.post(
@@ -459,14 +466,14 @@ class RekapKehadiranPerawatGigi extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Perawat Gigi ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Perawat Gigi ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
     );
     const { dataExport2, judul2 } = this.state;
     // Flatten the array for csv
     const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
     this.downloadCSV(
       csvContent2,
-      `Data Rekap Kehadiran Perawat Gigi Pengganti ${this.state.bulan} ${this.state.tahun}.csv`
+      `Data Rekap Kehadiran Perawat Gigi Pengganti ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
     );
   };
   formatTanggal = (tanggal) => {
@@ -525,7 +532,20 @@ class RekapKehadiranPerawatGigi extends Component {
       rowsPerPageOption: [5, 10],
       filterDate: new Date().toLocaleDateString(),
     };
-
+    const optionCabang = [
+      { value: "Kemiling", text: "Klinik Kosasih Kemiling" },
+      { value: "Rajabasa", text: "Klinik Kosasih Rajabasa" },
+      { value: "Urip", text: "Klinik Kosasih Urip" },
+      { value: "Tugu", text: "Klinik Kosasih Tugu" },
+      { value: "Palapa", text: "Klinik Kosasih Palapa" },
+      { value: "Amanah", text: "Klinik Kosasih Amanah" },
+      { value: "Tirtayasa", text: "Klinik Kosasih Tirtayasa" },
+      { value: "Panjang", text: "Klinik Kosasih Panjang" },
+      { value: "Teluk", text: "Klinik Kosasih Teluk" },
+      { value: "Gading", text: "Klinik Kosasih Sumber Waras" },
+      { value: "GTSKemiling", text: "GTS Kemiling" },
+      { value: "GTSTirtayasa", text: "GTS Tirtayasa" },
+    ];
     return (
       <>
         <div className="container mx-auto mb-16">
@@ -540,6 +560,29 @@ class RekapKehadiranPerawatGigi extends Component {
               <div className="flex">
                 <form action="" className=" w-full">
                   <div className="flex flex-row items-center gap-10">
+                    <Form.Group className="form-field">
+                      <Form.Label className="label-text">Cabang:</Form.Label>
+
+                      <select
+                        className="bulan-field"
+                        onChange={(e) =>
+                          this.setState({
+                            cabang: e.target.value, // Mendapatkan value dari opsi yang dipilih
+                            namaKlinik:
+                              e.target.options[e.target.selectedIndex].text, // Mendapatkan teks dari opsi yang dipilih
+                          })
+                        }
+                        value={this.state.cabang} // Mengikat nilai select ke state
+                      >
+                        <option value="">Pilih</option>
+                        {optionCabang.map((month) => (
+                          <option key={month.value} value={month.value}>
+                            {month.text}
+                          </option>
+                        ))}
+                      </select>
+                    </Form.Group>
+
                     <Form.Group className="form-field">
                       <Form.Label className="label-text">
                         Pilih Bulan:
@@ -602,7 +645,9 @@ class RekapKehadiranPerawatGigi extends Component {
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
+                            padding: "0",
                             gap: "1rem",
+                            width: "10rem",
                           }}
                         >
                           <div className="icon">
@@ -629,6 +674,7 @@ class RekapKehadiranPerawatGigi extends Component {
                             justifyContent: "center",
                             alignItems: "center",
                             gap: "1rem",
+                            width: "12rem",
                           }}
                         >
                           <div className="icon">

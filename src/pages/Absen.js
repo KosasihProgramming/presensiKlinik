@@ -7,7 +7,7 @@ import { konfersiJam } from "../function/konfersiJam";
 import { FiSearch } from "react-icons/fi";
 import { ToastContainer, Bounce, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import imageCompression from "browser-image-compression";
 import {
   collection,
   doc,
@@ -20,6 +20,7 @@ import {
 import { db, dbImage } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { ArrowBackIosNewOutlined } from "@mui/icons-material";
+import Loader from "../function/loader";
 // import { stat } from "fs";
 
 class Absen extends Component {
@@ -40,8 +41,10 @@ class Absen extends Component {
       dendaTelat: 0,
       isPindahKlinik: 0,
       pegawai: {},
+      cabang: {},
       namaPetugas: "",
       keterangan: "",
+      isLoad: false,
       isLanjutShift: 0,
       isDokterPengganti: 0,
       lembur: 0,
@@ -81,7 +84,30 @@ class Absen extends Component {
 
   componentDidMount() {
     this.getKlinik();
+    this.checkDevice();
   }
+
+  checkDevice = () => {
+    const storedEncodedText = localStorage.getItem("device");
+
+    console.log(storedEncodedText);
+
+    if (storedEncodedText) {
+      const postData = {
+        encode: storedEncodedText,
+      };
+
+      axios
+        .post(urlAPI + "/device/", postData)
+        .then((response) => {
+          console.log("Berhasil Di izinkan", response);
+          this.setState({ cabang: response.data[0].cabang });
+        })
+        .catch((error) => {
+          console.log("Error:", error);
+        });
+    }
+  };
 
   getKlinik = async () => {
     try {
@@ -94,6 +120,7 @@ class Absen extends Component {
 
   handleSearch = (e) => {
     e.preventDefault();
+    this.setState({ isLoad: true });
     const { barcode } = this.state;
     const jamMasuk = this.getCurrentTime();
     const dataIzin = this.getAllDataIzin();
@@ -169,6 +196,8 @@ class Absen extends Component {
               transition: Bounce,
             });
           }
+
+          this.setState({ isLoad: false });
         })
         .catch((err) => {
           console.error(err);
@@ -251,7 +280,7 @@ class Absen extends Component {
   };
   handleSubmit = async (e) => {
     e.preventDefault();
-    this.setState({ isProses: true });
+    this.setState({ isProses: true, isLoad: true });
     const {
       barcode,
       idJadwal,
@@ -274,11 +303,36 @@ class Absen extends Component {
       dokterPengganti,
       lokasiAbsen,
       dataIzin,
+      cabang,
     } = this.state;
 
     const namaInstansi = this.state.namaKlinik;
     const tanggalHariIni = this.getTodayDate();
-    const imageSrc = this.webcamRef.current.getScreenshot();
+    let imageSrc = this.webcamRef.current.getScreenshot();
+
+    // Convert data URL to Blob
+    const fotoKeluarBlob = this.dataURLToBlob(imageSrc);
+
+    // Compress the image to a maximum of 20KB
+    try {
+      const compressedFile = await imageCompression(fotoKeluarBlob, {
+        maxSizeMB: 0.02, // Set max size to 20KB (0.02MB)
+        maxWidthOrHeight: 1920, // Adjust if needed to control image dimensions
+      });
+
+      // Convert compressed file to base64
+      imageSrc = await imageCompression.getDataUrlFromFile(compressedFile);
+    } catch (compressionError) {
+      console.error("Error compressing image:", compressionError);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal mengkompres gambar",
+      });
+      this.setState({ isProses: false });
+
+      return;
+    }
     const [jamHarusMasuk, menitHarusMasuk] = this.state.harusMasuk
       .split(":")
       .map(Number);
@@ -327,7 +381,7 @@ class Absen extends Component {
       this.state.selectedJadwal.jam_masuk !=
         this.state.selectedJadwal.jam_pulang
     ) {
-      this.setState({ isProses: false });
+      this.setState({ isProses: false, isLoad: false });
       await this.handleHadir();
       await Swal.fire({
         icon: "warning",
@@ -461,6 +515,7 @@ class Absen extends Component {
         nama_petugas: this.state.namaPetugas,
         keterangan: "Masuk: " + this.state.keterangan,
         lokasiAbsen: this.state.namaKlinik,
+        cabang: cabang,
       };
       console.log(absenMasuk);
       axios
@@ -484,8 +539,8 @@ class Absen extends Component {
           });
           if (denda > 0) {
             Swal.fire({
-              icon: "error",
-              title: "Gagal",
+              icon: "warning",
+              title: "Maaf",
               text: `Anda Terkena Denda Telat Sebesar ${this.formatRupiah(
                 denda
               )}`,
@@ -494,10 +549,10 @@ class Absen extends Component {
               focusCancel: true,
             });
           }
-          this.setState({ isProses: false });
+          this.setState({ isProses: false, isLoad: false });
         })
         .catch((error) => {
-          this.setState({ isProses: false });
+          this.setState({ isProses: false, isLoad: false });
           Swal.fire({
             icon: "error",
             title: "Gagal",
@@ -631,6 +686,17 @@ class Absen extends Component {
     return `${year}-${month}-${day}`;
   }
 
+  dataURLToBlob = (dataURL) => {
+    const arr = dataURL.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
   compareDatesAndTimes(jam1, jam2, tanggal1, tanggal2) {
     // Cek apakah tanggal 1 dan tanggal 2 sama
     if (tanggal1 === tanggal2) {
@@ -709,179 +775,203 @@ class Absen extends Component {
     );
   };
   render() {
+    const optionCabang = [
+      { value: "Kemiling", text: "Klinik Kosasih Kemiling" },
+      { value: "Rajabasa", text: "Klinik Kosasih Rajabasa" },
+      { value: "Urip", text: "Klinik Kosasih Urip" },
+      { value: "Tugu", text: "Klinik Kosasih Tugu" },
+      { value: "Palapa", text: "Klinik Kosasih Palapa" },
+      { value: "Amanah", text: "Klinik Kosasih Amanah" },
+      { value: "Tirtayasa", text: "Klinik Kosasih Tirtayasa" },
+      { value: "Panjang", text: "Klinik Kosasih Panjang" },
+      { value: "Teluk", text: "Klinik Kosasih Teluk" },
+      { value: "Gading", text: "Klinik Kosasih Sumber Waras" },
+      { value: "GTSKemiling", text: "GTS Kemiling" },
+      { value: "GTSTirtayasa", text: "GTS Tirtayasa" },
+    ];
     console.log("jadwal", this.state.dataJadwalHariIni);
     return (
       <div>
         <ToastContainer />
-        <div className="card-presensi">
-          <div className="rounded-lg bg-white shadow-lg">
-            <div className="grid grid-cols-2">
-              <div className="flex p-10 h-[70vh] justify-center items-center">
-                <Webcam
-                  className="rounded-3xl"
-                  audio={false}
-                  ref={this.webcamRef}
-                  screenshotFormat="image/jpeg"
-                />
-              </div>
-              <div className="flex flex-col justify-center">
-                <h4 className="title">Presensi masuk</h4>
-                <form action="">
-                  <div className="flex flex-col gap-4 w-[60%]">
-                    <div className="flex flex-row gap-3">
-                      <input
-                        type="number"
-                        placeholder="Masukkan barcode.."
-                        className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
-                        value={this.state.barcode}
-                        onChange={(e) => {
-                          this.setState({ barcode: e.target.value });
-                        }}
-                        required
-                      />
-                      <button
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
-                        onClick={this.handleSearch}
-                      >
-                        <FiSearch />
-                      </button>
-                    </div>
-                    <div className="relative">
+        {this.state.isLoad ? (
+          <>
+            <div className="w-full h-[100vh] flex justify-center items-center">
+              <Loader />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="card-presensi">
+              <div className="rounded-lg bg-white shadow-lg">
+                <div className="grid grid-cols-2">
+                  <div className="flex p-10 h-[70vh] justify-center items-center">
+                    <Webcam
+                      className="rounded-3xl"
+                      audio={false}
+                      ref={this.webcamRef}
+                      screenshotFormat="image/jpeg"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <h4 className="title">Presensi masuk</h4>
+                    <form action="">
+                      <div className="flex flex-col gap-4 w-[60%]">
+                        <div className="flex flex-row gap-3">
+                          <input
+                            type="number"
+                            placeholder="Masukkan barcode.."
+                            className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
+                            value={this.state.barcode}
+                            onChange={(e) => {
+                              this.setState({ barcode: e.target.value });
+                            }}
+                            required
+                          />
+                          <button
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
+                            onClick={this.handleSearch}
+                          >
+                            <FiSearch />
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <select
+                            className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            value={this.state.idDetailJadwal}
+                            onChange={(e) => {
+                              const selectedData =
+                                this.state.dataJadwalHariIni.find(
+                                  (data) => data.id === parseInt(e.target.value)
+                                );
+                              const selectedIdJadwal = selectedData.id_jadwal;
+                              const selectedIdShift = selectedData.id_shift;
+                              const selectedHarusMasuk = konfersiJam(
+                                selectedData.jam_masuk
+                              );
+                              this.setState({
+                                selectedJadwal: selectedData,
+                                idDetailJadwal: e.target.value,
+                                idJadwal: selectedIdJadwal,
+                                idShift: selectedIdShift,
+                                harusMasuk: selectedHarusMasuk,
+                              });
+                            }}
+                          >
+                            <option>Pilih Jadwal Anda</option>
+                            {this.state.dataJadwalHariIni.map((data) => (
+                              <option value={data.id}>{data.nama_shift}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {/* <div className="relative">
                       <select
-                        className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                        value={this.state.idDetailJadwal}
+                        className="block hover:cursor-pointer appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                         onChange={(e) => {
-                          const selectedData =
-                            this.state.dataJadwalHariIni.find(
-                              (data) => data.id === parseInt(e.target.value)
-                            );
-                          const selectedIdJadwal = selectedData.id_jadwal;
-                          const selectedIdShift = selectedData.id_shift;
-                          const selectedHarusMasuk = konfersiJam(
-                            selectedData.jam_masuk
-                          );
-                          this.setState({
-                            selectedJadwal: selectedData,
-                            idDetailJadwal: e.target.value,
-                            idJadwal: selectedIdJadwal,
-                            idShift: selectedIdShift,
-                            harusMasuk: selectedHarusMasuk,
-                          });
+                          this.setState({ cabang: e.target.value });
                         }}
                       >
-                        <option>Pilih Jadwal Anda</option>
-                        {this.state.dataJadwalHariIni.map((data) => (
-                          <option value={data.id}>{data.nama_shift}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {/* <div className="relative">
-                      <select
-                        className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                        onChange={(e) => {
-                          this.setState({ lokasiAbsen: e.target.value });
-                        }}
-                      >
-                        <option>Pilih Lokasi Anda</option>
-                        {this.state.dataPosisi.map((data) => (
-                          <option value={data.text}>{data.value}</option>
+                        <option>Pilih Cabang Anda</option>
+                        {optionCabang.map((data) => (
+                          <option value={data.value}>{data.text}</option>
                         ))}
                       </select>
                     </div> */}
-                    <div className="flex flex-rows gap-3">
-                      <div className="flex items-center">
+                        <div className="flex flex-rows gap-3">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="checkbox"
+                              name="checkbox"
+                              checked={this.state.isPindahKlinik === 1}
+                              onChange={this.handleCheckboxChange}
+                              className="form-checkbox h-5 w-5 text-blue-600"
+                            />
+                            <label
+                              htmlFor="checkbox"
+                              className="ml-2 text-gray-700"
+                            >
+                              Saya pindah klinik
+                            </label>
+                          </div>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="checkboxShift"
+                              name="checkboxShift"
+                              checked={this.state.isLanjutShift === 1}
+                              onChange={this.handleCheckboxChangeShift}
+                              className="form-checkbox h-5 w-5 text-blue-600"
+                            />
+                            <label
+                              htmlFor="checkbox"
+                              className="ml-2 text-gray-700"
+                            >
+                              Saya lanjut shift
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="checkboxPengganti"
+                            name="isDokterPengganti"
+                            checked={this.state.isDokterPengganti === 1}
+                            onChange={this.handleCheckboxChangeDokter}
+                            className="form-checkbox h-5 w-5 text-blue-600"
+                          />
+                          <label className="ml-2 text-gray-700">
+                            Saya Pengganti Dari Luar Klinik
+                          </label>
+                        </div>
                         <input
-                          type="checkbox"
-                          id="checkbox"
-                          name="checkbox"
-                          checked={this.state.isPindahKlinik === 1}
-                          onChange={this.handleCheckboxChange}
-                          className="form-checkbox h-5 w-5 text-blue-600"
+                          type="text"
+                          placeholder="Nama dokter pengganti - no hp"
+                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 ${
+                            this.state.isDokterPengganti === 1 ? "" : "hidden"
+                          }`}
+                          value={this.state.dokterPengganti}
+                          onChange={(e) => {
+                            this.setState({ dokterPengganti: e.target.value });
+                          }}
+                          required
                         />
-                        <label
-                          htmlFor="checkbox"
-                          className="ml-2 text-gray-700"
-                        >
-                          Saya pindah klinik
-                        </label>
-                      </div>
-                      <div className="flex items-center">
                         <input
-                          type="checkbox"
-                          id="checkboxShift"
-                          name="checkboxShift"
-                          checked={this.state.isLanjutShift === 1}
-                          onChange={this.handleCheckboxChangeShift}
-                          className="form-checkbox h-5 w-5 text-blue-600"
+                          type="text"
+                          placeholder="Nama Petugas PO"
+                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
+                          value={this.state.namaPetugas}
+                          onChange={(e) => {
+                            this.setState({ namaPetugas: e.target.value });
+                          }}
+                          required
                         />
-                        <label
-                          htmlFor="checkbox"
-                          className="ml-2 text-gray-700"
-                        >
-                          Saya lanjut shift
-                        </label>
+                        <input
+                          type="text"
+                          placeholder="Keterangan"
+                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
+                          value={this.state.keterangan}
+                          onChange={(e) => {
+                            this.setState({ keterangan: e.target.value });
+                          }}
+                        />
+                        <div className="flex flex-row gap-4">
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
+                            onClick={this.handleSubmit}
+                            disabled={this.state.isProses}
+                          >
+                            Hadir
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="checkboxPengganti"
-                        name="isDokterPengganti"
-                        checked={this.state.isDokterPengganti === 1}
-                        onChange={this.handleCheckboxChangeDokter}
-                        className="form-checkbox h-5 w-5 text-blue-600"
-                      />
-                      <label className="ml-2 text-gray-700">
-                        Saya Pengganti Dari Luar Klinik
-                      </label>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Nama dokter pengganti - no hp"
-                      className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 ${
-                        this.state.isDokterPengganti === 1 ? "" : "hidden"
-                      }`}
-                      value={this.state.dokterPengganti}
-                      onChange={(e) => {
-                        this.setState({ dokterPengganti: e.target.value });
-                      }}
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Nama Petugas PO"
-                      className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
-                      value={this.state.namaPetugas}
-                      onChange={(e) => {
-                        this.setState({ namaPetugas: e.target.value });
-                      }}
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Keterangan"
-                      className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
-                      value={this.state.keterangan}
-                      onChange={(e) => {
-                        this.setState({ keterangan: e.target.value });
-                      }}
-                    />
-                    <div className="flex flex-row gap-4">
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
-                        onClick={this.handleSubmit}
-                        disabled={this.state.isProses}
-                      >
-                        Hadir
-                      </button>
-                    </div>
+                    </form>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     );
   }

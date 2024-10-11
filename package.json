@@ -16,6 +16,7 @@
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.20.5",
     "axios": "^1.6.8",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.10",
     "file-saver": "^2.0.5",

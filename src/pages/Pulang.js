@@ -7,7 +7,8 @@ import { konfersiJam } from "../function/konfersiJam";
 import Swal from "sweetalert2";
 import ModalAddIzin from "../components/modalIzin";
 import dayjs from "dayjs";
-
+import imageCompression from "browser-image-compression";
+import Loader from "../function/loader";
 const Pulang = () => {
   const webcamRef = useRef(null);
   const { id_kehadiran } = useParams();
@@ -21,6 +22,7 @@ const Pulang = () => {
     idShift: 0,
     fotoMasuk: "",
     fotoKeluar: "",
+    realBarcode: "",
     jamMasuk: "",
     jamKeluar: "",
     jamKeluarShift: "",
@@ -29,6 +31,7 @@ const Pulang = () => {
     keterangan: "",
     tanggalAbsen: "",
     dendaTelat: 0,
+    isLoad: false,
     isPindahKlinik: 1,
     lembur: 0,
     namaDokter: "",
@@ -46,14 +49,27 @@ const Pulang = () => {
   }, [state.idKehadiran]);
 
   const getKehadiran = () => {
+    console.log("idKehadiran:", state.idKehadiran); // Tambahkan log untuk memeriksa idKehadiran
+    if (!state.idKehadiran) {
+      console.error("idKehadiran is missing.");
+      return; // Jangan lanjutkan request jika idKehadiran kosong
+    }
+
+    setState((prevState) => ({
+      ...prevState,
+      isLoad: true,
+    }));
+
     axios
-      .get(`${urlAPI}/kehadiran/${state.idKehadiran}`)
+      .post(`${urlAPI}/kehadiran/presensi`, {
+        id_kehadiran: state.idKehadiran, // Mengirim idKehadiran melalui body request
+      })
       .then((response) => {
         const data = response.data[0];
         console.log(response.data[0]);
         setState((prevState) => ({
           ...prevState,
-
+          realBarcode: data.barcode,
           idJadwal: data.id_jadwal,
           idDetailJadwal: data.id_detail_jadwal,
           idShift: data.id_shift,
@@ -70,6 +86,7 @@ const Pulang = () => {
           lembur: data.lembur,
           namaShift: data.nama_shift,
           ket: data.keterangan,
+          isLoad: false,
         }));
       })
       .catch((error) => {
@@ -95,77 +112,115 @@ const Pulang = () => {
 
   const handlePulang = (e) => {
     e.preventDefault();
-
+    setState((prevState) => ({
+      ...prevState,
+      isLoad: true,
+    }));
     handleSubmit();
   };
-  const handleSubmit = () => {
-    setState((prevState) => ({ ...prevState, isProses: true }));
-    const { barCode, idKehadiran } = state;
 
-    axios
-      .get(`${urlAPI}/kehadiran/${state.idKehadiran}`)
-      .then((response) => {
-        const data = response.data[0];
-        const barcodeData = data.barcode;
+  const dataURLToBlob = (dataURL) => {
+    const arr = dataURL.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
 
-        console.log(barcodeData, "data Bar");
-        console.log(barCode);
-        if (barcodeData != `0${barCode}`) {
-          Swal.fire({
-            icon: "error",
-            title: "Gagal",
-            text: "Barcode yang dimasukkan tidak sesuai",
-          }).then((result) => {
-            if (result.value) {
-              setState((prevState) => ({ ...prevState, isProses: false }));
-            }
-          });
-        } else {
-          const fotoKeluar = webcamRef.current.getScreenshot();
-          const waktuSekarang = new Date(); //jam pulang
-          const jamKeluar = getCurrentTime();
-          console.log(jamKeluar, "Jam Keluar");
-          axios
-            .patch(`${urlAPI}/kehadiran/${idKehadiran}`, {
-              foto_keluar: fotoKeluar,
-              jam_masuk: state.jamMasuk,
-              jam_keluar: state.jamKeluarShift,
-              isIzin: state.isIzin,
-              ket:
-                state.ket == null
-                  ? "Pulang : " + state.keterangan
-                  : state.ket + "Pulang : " + state.keterangan,
-            })
-            .then((response) => {
-              Swal.fire({
-                icon: "success",
-                title: "Berhasil",
-                text: "Berhasil melakukan presensi pulang",
-              }).then((result) => {
-                if (result.value) {
-                  navigate("/kehadiran"); // Pindah ke halaman utama atau rute lain
-                }
-              });
-            })
-            .catch((error) => {
-              setState((prevState) => ({ ...prevState, isProses: false }));
+  const handleSubmit = async () => {
+    try {
+      // Set isProses to true before starting the process
+      setState((prevState) => ({ ...prevState, isProses: true }));
+      const { barCode, idKehadiran } = state;
 
-              Swal.fire({
-                icon: "error",
-                title: "Gagal",
-                text: "Terjadi kesalahan saat menyimpan data",
-              });
-            });
-        }
-      })
-      .catch((err) => {
-        Swal.fire({
+      const barcodeData = state.realBarcode;
+
+      console.log(barcodeData, "data Bar");
+      console.log(barCode);
+
+      // Check if the barcode matches
+      if (barCode !== `0${barcodeData}`) {
+        await Swal.fire({
           icon: "error",
           title: "Gagal",
-          text: err,
+          text: "Barcode yang dimasukkan tidak sesuai",
         });
-        console.error(err);
+
+        // Reset the isProses state
+        setState((prevState) => ({ ...prevState, isProses: false }));
+        return;
+      }
+
+      // Capture webcam screenshot
+      let fotoKeluar = webcamRef.current.getScreenshot();
+
+      // Convert data URL to Blob
+      const fotoKeluarBlob = dataURLToBlob(fotoKeluar);
+
+      // Compress the image to a maximum of 20KB
+      try {
+        const compressedFile = await imageCompression(fotoKeluarBlob, {
+          maxSizeMB: 0.02, // Set max size to 20KB (0.02MB)
+          maxWidthOrHeight: 1920, // Adjust dimensions if needed
+        });
+
+        // Convert compressed file to base64
+        fotoKeluar = await imageCompression.getDataUrlFromFile(compressedFile);
+      } catch (compressionError) {
+        console.error("Error compressing image:", compressionError);
+        await Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: "Gagal mengkompres gambar",
+        });
+
+        // Reset the isProses state
+        setState((prevState) => ({ ...prevState, isProses: false }));
+        return;
+      }
+
+      const waktuSekarang = new Date(); // Current time for jamKeluar
+      const jamKeluar = getCurrentTime();
+      console.log(jamKeluar, "Jam Keluar");
+
+      // Update kehadiran data using PATCH request
+      await axios.patch(`${urlAPI}/kehadiran/${idKehadiran}`, {
+        foto_keluar: fotoKeluar,
+        jam_masuk: state.jamMasuk,
+        jam_keluar: state.jamKeluarShift,
+        isIzin: state.isIzin,
+        ket:
+          state.ket == null
+            ? `Pulang: ${state.keterangan}`
+            : `${state.ket} Pulang: ${state.keterangan}`,
       });
+
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Berhasil melakukan presensi pulang",
+      });
+
+      // Navigate to the attendance page
+      navigate("/kehadiran");
+    } catch (error) {
+      console.error("Error handling request:", error);
+      setState((prevState) => ({
+        ...prevState,
+        isProses: false,
+        isLoad: false,
+      }));
+
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menyimpan data",
+      });
+    }
   };
 
   const handleIzin = async (alasan, jenis, isFile, image) => {
@@ -280,75 +335,85 @@ const Pulang = () => {
   }
   return (
     <div>
-      <div className="card-presensi">
-        <ModalAddIzin
-          open={state.isIzin}
-          setOpen={() => {
-            setState({ ...state, isIzin: !state.isIzin });
-          }}
-          nama={state.namaDokter}
-          isPulang={true}
-          handleAdd={handleIzin}
-          jamPulang={state.jamKeluarShift}
-        />
-        <div className="rounded-lg bg-white shadow-lg">
-          <div className="grid grid-cols-2">
-            <div className="flex p-10 h-[70vh] justify-center items-center">
-              <Webcam
-                className="rounded-3xl"
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-              />
-            </div>
-            <div className="flex flex-col justify-center">
-              <h4 className="title">Presensi pulang</h4>
-              <p className="text-xl">
-                Nama Dokter:{" "}
-                <span className="font-bold">{state.namaDokter}</span>
-              </p>
-              <p className="text-xl mb-5">
-                Shift: <span className="font-bold">{state.namaShift}</span>
-              </p>
-              <form onSubmit={handlePulang}>
-                <div className="flex flex-col gap-4 w-[60%]">
-                  <input
-                    type="number"
-                    onChange={(e) =>
-                      setState({ ...state, barCode: e.target.value })
-                    }
-                    className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
+      {state.isLoad == true ? (
+        <>
+          <div className="w-full h-[100vh] flex justify-center items-center">
+            <Loader />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="card-presensi">
+            <ModalAddIzin
+              open={state.isIzin}
+              setOpen={() => {
+                setState({ ...state, isIzin: !state.isIzin });
+              }}
+              nama={state.namaDokter}
+              isPulang={true}
+              handleAdd={handleIzin}
+              jamPulang={state.jamKeluarShift}
+            />
+            <div className="rounded-lg bg-white shadow-lg">
+              <div className="grid grid-cols-2">
+                <div className="flex p-10 h-[70vh] justify-center items-center">
+                  <Webcam
+                    className="rounded-3xl"
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
                   />
-                  <input
-                    type="text"
-                    placeholder="Keterangan"
-                    className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
-                    value={state.keterangan}
-                    onChange={(e) => {
-                      setState({ ...state, keterangan: e.target.value });
-                    }}
-                  />
-                  <div className="flex flex-row gap-4">
-                    <Link
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:bg-red-600"
-                      to={"/kehadiran"}
-                    >
-                      Batal
-                    </Link>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
-                      disabled={state.isProses}
-                    >
-                      Pulang
-                    </button>
-                  </div>
                 </div>
-              </form>
+                <div className="flex flex-col justify-center">
+                  <h4 className="title">Presensi pulang</h4>
+                  <p className="text-xl">
+                    Nama Dokter:{" "}
+                    <span className="font-bold">{state.namaDokter}</span>
+                  </p>
+                  <p className="text-xl mb-5">
+                    Shift: <span className="font-bold">{state.namaShift}</span>
+                  </p>
+                  <form onSubmit={handlePulang}>
+                    <div className="flex flex-col gap-4 w-[60%]">
+                      <input
+                        type="number"
+                        onChange={(e) =>
+                          setState({ ...state, barCode: e.target.value })
+                        }
+                        className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Keterangan"
+                        className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
+                        value={state.keterangan}
+                        onChange={(e) => {
+                          setState({ ...state, keterangan: e.target.value });
+                        }}
+                      />
+                      <div className="flex flex-row gap-4">
+                        <Link
+                          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:bg-red-600"
+                          to={"/kehadiran"}
+                        >
+                          Batal
+                        </Link>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
+                          disabled={state.isProses}
+                        >
+                          Pulang
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };
