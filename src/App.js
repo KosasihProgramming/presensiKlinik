@@ -34,14 +34,16 @@ import RekapKehadiranApoteker from "./pages/rekapKehadiran/RekapApoteker";
 import LocalStorage from "./pages/localstorage";
 import axios from "axios";
 import { urlAPI } from "./config/global";
+import NoAkses from "./pages/noAkses";
+import SetDevice from "./pages/localstorage";
 
 function App() {
   const isLoggedIn = sessionStorage.getItem("user");
   const [isMobile, setIsMobile] = useState(false);
   const [isIzin, setIsizin] = useState(false);
   const [isAkses, setIsAkses] = useState(false);
+
   useEffect(() => {
-    // Deteksi apakah user menggunakan perangkat mobile
     const checkIsMobile = () => {
       const mobileCheck =
         /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 1024;
@@ -51,14 +53,6 @@ function App() {
     checkIsMobile();
     window.addEventListener("resize", checkIsMobile);
 
-    const storedEncodedText = localStorage.getItem("isAccess");
-    // if (storedEncodedText) {
-    //   const access = encodeText(storedEncodedText);
-    //   const decodedAccess = encodeText("Diizinkan");
-    //   if (access == decodedAccess) {
-
-    //   }
-    // }
     return () => {
       window.removeEventListener("resize", checkIsMobile);
     };
@@ -66,8 +60,6 @@ function App() {
 
   const checkDevice = () => {
     const storedEncodedText = localStorage.getItem("device");
-
-    console.log(storedEncodedText);
 
     if (storedEncodedText) {
       const postData = {
@@ -77,7 +69,6 @@ function App() {
       axios
         .post(urlAPI + "/device/", postData)
         .then((response) => {
-          console.log("Berhasil Di izinkan", response);
           if (response.data.length > 0) {
             setIsAkses(true);
           }
@@ -88,126 +79,105 @@ function App() {
     }
   };
 
-  const encodeText = (text) => {
-    return btoa(text); // btoa() digunakan untuk melakukan base64 encoding
-  };
-
-  // Fungsi untuk decode base64 kembali ke kalimat
-  const decodeText = (encoded) => {
-    try {
-      return atob(encoded); // atob() digunakan untuk melakukan base64 decoding
-    } catch (error) {
-      return "Error: Tidak dapat mendecode teks!";
-    }
-  };
   return (
     <div className="bg-gray-200 pb-10">
-      {isAkses ? (
-        <>
-          <Router>
+      <Router>
+        {isAkses ? (
+          <>
             <Navigation
               openIzin={() => {
                 setIsizin(!isIzin);
               }}
             />
-
             <Routes>
               {isLoggedIn ? (
                 <>
-                  <Route path="/" Component={Home} />
-                  <Route path="/shift" Component={Shift} />
-                  <Route path="/jadwal-kehadiran" Component={JadwalKehadiran} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/shift" element={<Shift />} />
+                  <Route
+                    path="/jadwal-kehadiran"
+                    element={<JadwalKehadiran />}
+                  />
                   <Route
                     path="/jadwal/detail-jadwal/:idJadwal"
-                    Component={DetailJadwal}
+                    element={<DetailJadwal />}
                   />
-                  <Route path="/kehadiran" Component={Kehadiran} />
-                  <Route path="/presensi" Component={Absen} />
-                  <Route path="/pulang/:id_kehadiran" Component={Pulang} />
+                  <Route path="/kehadiran" element={<Kehadiran />} />
+                  <Route path="/presensi" element={<Absen />} />
+                  <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
                   <Route
                     path="/rekap-kehadiran-dokter"
-                    Component={RekapKehadiranDokter}
+                    element={<RekapKehadiranDokter />}
                   />
                   <Route
                     path="/rekap-kehadiran-dokter-gigi"
-                    Component={RekapKehadiranDokterGigi}
+                    element={<RekapKehadiranDokterGigi />}
                   />
                   <Route
                     path="/rekap-kehadiran-perawat"
-                    Component={RekapKehadiranPerawat}
+                    element={<RekapKehadiranPerawat />}
                   />
-
                   <Route
                     path="/rekap-kehadiran-apoteker"
-                    Component={RekapKehadiranApoteker}
+                    element={<RekapKehadiranApoteker />}
                   />
                   <Route
                     path="/rekap-kehadiran-analis"
-                    Component={RekapKehadiranAnalis}
+                    element={<RekapKehadiranAnalis />}
                   />
                   <Route
                     path="/rekap-kehadiran-perawat-gigi"
-                    Component={RekapKehadiranPerawatGigi}
+                    element={<RekapKehadiranPerawatGigi />}
                   />
                   <Route
                     path="/rekap-kehadiran-farmasi"
-                    Component={RekapKehadiranFarmasi}
+                    element={<RekapKehadiranFarmasi />}
                   />
                   <Route
                     path="/rekap-kehadiran-cs"
-                    Component={RekapKehadiranPegawai}
+                    element={<RekapKehadiranPegawai />}
                   />
-                  {/* Penggajian */}
-                  <Route path="/rekap-gaji" Component={RekapGajiPerShift} />
+                  <Route path="/rekap-gaji" element={<RekapGajiPerShift />} />
                   <Route
                     path="/rekap-gaji-dokter"
-                    Component={RekapGajiDokter}
+                    element={<RekapGajiDokter />}
                   />
                   <Route
                     path="/rekap-shift-perawat-gigi"
-                    Component={RekapGajiShiftPerawat}
+                    element={<RekapGajiShiftPerawat />}
                   />
                   <Route
                     path="/rekap-periode-perawat-gigi"
-                    Component={RekapGajiPeriodePerawat}
+                    element={<RekapGajiPeriodePerawat />}
                   />
                   <Route
                     path="/rekap-shift-perawat-umum"
-                    Component={RekapShiftPerawatUmum}
+                    element={<RekapShiftPerawatUmum />}
                   />
-                  <Route path="/data-pegawai" Component={DataPegawai} />
+                  <Route path="/data-pegawai" element={<DataPegawai />} />
                 </>
               ) : (
                 <>
-                  <Route path="/login" Component={Login} />
-                  <Route path="/kehadiran" Component={Kehadiran} />
-                  <Route path="/presensi" Component={Absen} />
-                  <Route path="/pulang/:id_kehadiran" Component={Pulang} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/kehadiran" element={<Kehadiran />} />
+                  <Route path="/presensi" element={<Absen />} />
+                  <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
                   {sessionStorage.getItem("isSuccess") && (
-                    <Route path="/success" Component={SendedForm} />
+                    <Route path="/success" element={<SendedForm />} />
                   )}
                 </>
               )}
             </Routes>
-          </Router>
-        </>
-      ) : (
-        <>
-          <Router>
+          </>
+        ) : (
+          <>
             <Routes>
-              <Route
-                path="/"
-                Component={
-                  <div className="w-full h-[100vh] flex justify-center items-center text-xl font-bold">
-                    <p>Anda tidak memiliki akses ke Sistem ini</p>
-                  </div>
-                }
-              />
-              <Route path="/device-access-kosasih" Component={LocalStorage} />
+              <Route path="/" element={<NoAkses />} />
+              <Route path="/device-access-kosasih" element={<SetDevice />} />
             </Routes>
-          </Router>
-        </>
-      )}
+          </>
+        )}
+      </Router>
     </div>
   );
 }

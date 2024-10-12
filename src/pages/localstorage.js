@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { urlAPI } from "../config/global";
 import Swal from "sweetalert2";
 
-const LocalStorage = () => {
+const SetDevice = () => {
   const [inputText, setInputText] = useState("");
   const [encodedText, setEncodedText] = useState("");
   const [storedText, setStoredText] = useState("");
@@ -123,4 +123,4 @@ const LocalStorage = () => {
   );
 };
 
-export default LocalStorage;
+export default SetDevice;
