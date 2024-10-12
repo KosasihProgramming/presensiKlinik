@@ -25,11 +25,12 @@ const SetDevice = () => {
   };
 
   // Fungsi untuk menyimpan teks yang di-encode ke localStorage
-  const saveToLocalStorage = () => {
-    const encoded = encodeText(`${name}${cabang}`);
-    insertData();
+  const saveToLocalStorage = async () => {
+    const encoded = await encodeText(`${name}${cabang}`);
     setEncodedText(encoded);
     localStorage.setItem("device", encoded);
+    insertData(encoded);
+
     alert("Teks berhasil di-encode dan disimpan ke LocalStorage!");
   };
 
@@ -42,16 +43,17 @@ const SetDevice = () => {
     }
   }, []);
 
-  const insertData = () => {
+  const insertData = (encoded) => {
     const postData = {
       nama: name,
       cabang: cabang,
-      encoded: encodedText,
+      encoded: encoded,
     };
 
     axios
       .post(urlAPI + "/device/add/", postData)
       .then((response) => {
+        console.log(response);
         Swal.fire({
           icon: "success",
           title: "Berhasil",

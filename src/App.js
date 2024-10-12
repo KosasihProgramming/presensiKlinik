@@ -60,13 +60,11 @@ function App() {
 
   const checkDevice = () => {
     const storedEncodedText = localStorage.getItem("device");
-    alert("cek");
 
     if (storedEncodedText) {
       const postData = {
         encode: storedEncodedText,
       };
-      alert("dapat");
       axios
         .post(urlAPI + "/device/", postData)
         .then((response) => {
