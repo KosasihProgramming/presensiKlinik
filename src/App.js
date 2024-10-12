@@ -70,6 +70,7 @@ function App() {
       axios
         .post(urlAPI + "/device/", postData)
         .then((response) => {
+          console.log(response);
           if (response.data.length > 0) {
             setIsAkses(true);
           }
