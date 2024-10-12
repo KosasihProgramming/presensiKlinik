@@ -60,6 +60,7 @@ function App() {
 
   const checkDevice = () => {
     const storedEncodedText = localStorage.getItem("device");
+    alert("cek");
 
     if (storedEncodedText) {
       const postData = {
