@@ -314,7 +314,32 @@ class RekapKehadiranPegawai extends Component {
       ) : (
         <div>{`${item.telat} Menit`}</div>
       ),
-      formatCurrency(item.nominal_shift),
+      item.foto_masuk ? (
+        <div className="flex justify-center items-center ">
+          <img
+            src={item.foto_masuk}
+            alt="Foto Masuk"
+            className="w-10 h-10 rounded-full object-cover bg-cover"
+          />
+        </div>
+      ) : (
+        <div className="w-10 h-10 flex justify-center items-center">
+          Belum Ada Foto
+        </div>
+      ),
+      item.foto_Keluar ? (
+        <div className="flex justify-center items-center ">
+          <img
+            src={item.foto_keluar}
+            alt="Foto Pulang"
+            className="w-10 h-10 rounded-full object-cover bg-cover"
+          />
+        </div>
+      ) : (
+        <div className="w-10 h-10 flex justify-center items-center">
+          Belum Ada Foto
+        </div>
+      ),
       item.denda_telat > 0 ? (
         <div className="rounded bg-red-500 p-1 text-white">
           {formatCurrency(item.denda_telat)}
@@ -329,7 +354,8 @@ class RekapKehadiranPegawai extends Component {
       "Nama Pegawai",
       "Nama Shift",
       "Telat",
-      "Nominal",
+      "Masuk",
+      "Pulang",
       "Denda Telat",
     ];
 
