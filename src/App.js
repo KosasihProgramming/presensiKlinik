@@ -160,7 +160,7 @@ function App() {
                 <>
                   <Route path="/login" element={<Login />} />
                   <Route path="/kehadiran" element={<Kehadiran />} />
-                  <Route path="/presensi" element={<Absen />} />
+                  <Route path="/" element={<Absen />} />
                   <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
                   {sessionStorage.getItem("isSuccess") && (
                     <Route path="/success" element={<SendedForm />} />
