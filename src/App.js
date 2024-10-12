@@ -66,7 +66,7 @@ function App() {
       const postData = {
         encode: storedEncodedText,
       };
-
+      alert("dapat");
       axios
         .post(urlAPI + "/device/", postData)
         .then((response) => {
