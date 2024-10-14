@@ -164,7 +164,7 @@ const Pulang = () => {
       // Compress the image to a maximum of 20KB
       try {
         const compressedFile = await imageCompression(fotoKeluarBlob, {
-          maxSizeMB: 0.02, // Set max size to 20KB (0.02MB)
+          maxSizeMB: 0.1, // Set max size to 20KB (0.02MB)
           maxWidthOrHeight: 1920, // Adjust dimensions if needed
         });
 
