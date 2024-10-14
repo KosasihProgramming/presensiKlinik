@@ -505,7 +505,12 @@ class RekapKehadiranDokter extends Component {
         <div>{`${item.telat} Menit`}</div>
       ),
       item.foto_masuk ? (
-        <div className="flex justify-center items-center ">
+        <div
+          className="flex justify-center items-center "
+          onClick={() => {
+            this.showAlert(item.foto_masuk);
+          }}
+        >
           <img
             src={item.foto_masuk}
             alt="Foto Masuk"
