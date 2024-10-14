@@ -7,6 +7,7 @@ import { Form } from "react-bootstrap";
 import "../../style/jadwal.css";
 import { urlAPI } from "../../config/global";
 import Loader from "../../function/loader";
+import Swal from "sweetalert2";
 
 const months = [
   { value: "Januari", label: "Januari" },
@@ -476,6 +477,21 @@ class RekapKehadiranDokter extends Component {
     const formattedJam1 = formatTime(jam);
     return formattedJam1;
   };
+  showAlert = (url) => {
+    Swal.fire({
+      title: "Foto ",
+      imageUrl: url,
+      imageWidth: 600,
+      imageHeight: 450,
+      imageAlt: "Bukti",
+      customClass: {
+        popup: "bg-white text-blue-500 p-4",
+        title: "text-2xl font-medium mb-4",
+        image: "object-cover rounded-xl",
+        confirmButton: "bg-blue-500 text-white hover:bg-blue-500",
+      },
+    });
+  };
   render() {
     const { rekapKehadiran } = this.state;
 
@@ -501,8 +517,13 @@ class RekapKehadiranDokter extends Component {
           Belum Ada Foto
         </div>
       ),
-      item.foto_Keluar ? (
-        <div className="flex justify-center items-center ">
+      item.foto_keluar ? (
+        <div
+          className="flex justify-center items-center "
+          onClick={() => {
+            this.showAlert(item.foto_keluar);
+          }}
+        >
           <img
             src={item.foto_keluar}
             alt="Foto Pulang"

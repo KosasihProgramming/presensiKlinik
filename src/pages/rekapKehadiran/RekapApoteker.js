@@ -355,7 +355,7 @@ class RekapKehadiranApoteker extends Component {
           Belum Ada Foto
         </div>
       ),
-      item.foto_Keluar ? (
+      item.foto_keluar ? (
         <div className="flex justify-center items-center ">
           <img
             src={item.foto_keluar}
