@@ -92,7 +92,7 @@ function App() {
             <Routes>
               {isLoggedIn ? (
                 <>
-                  <Route path="/" element={<Home />} />
+                  {/* <Route path="/" element={<Home />} /> */}
                   <Route path="/shift" element={<Shift />} />
                   <Route
                     path="/jadwal-kehadiran"
@@ -103,6 +103,7 @@ function App() {
                     element={<DetailJadwal />}
                   />
                   <Route path="/kehadiran" element={<Kehadiran />} />
+                  <Route path="/" element={<Absen />} />
                   <Route path="/presensi" element={<Absen />} />
                   <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
                   <Route
@@ -161,6 +162,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/kehadiran" element={<Kehadiran />} />
                   <Route path="/" element={<Absen />} />
+                  <Route path="/presensi" element={<Absen />} />
                   <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
                   {sessionStorage.getItem("isSuccess") && (
                     <Route path="/success" element={<SendedForm />} />
