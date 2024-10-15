@@ -175,7 +175,10 @@ function App() {
           <>
             <Routes>
               <Route path="/" element={<NoAkses />} />
-              <Route path="/device-access-kosasih" element={<SetDevice />} />
+              <Route
+                path="/device-access-kosasih/2024"
+                element={<SetDevice />}
+              />
             </Routes>
           </>
         )}
