@@ -49,6 +49,7 @@ class RekapKehadiranAnalis extends Component {
       judul2: [],
       dataExport2: [],
       dataExport: [],
+      charLoad: "Sedang Memuat Data...",
       isLoad: false,
       bulan: null,
       tahun: new Date().getFullYear(),
@@ -73,6 +74,8 @@ class RekapKehadiranAnalis extends Component {
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Mengambil data.." });
+
     try {
       const response = await axios.post(
         `${urlAPI}/rekap-kehadiran-analis/get`,
@@ -91,6 +94,7 @@ class RekapKehadiranAnalis extends Component {
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
 
     try {
       const response = await axios.post(
@@ -111,6 +115,7 @@ class RekapKehadiranAnalis extends Component {
   ambilData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang mengambil data..." });
 
     try {
       const response = await axios.post(
@@ -132,6 +137,7 @@ class RekapKehadiranAnalis extends Component {
   cekData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Memeriksa Data..." });
 
     try {
       const response = await axios.post(
@@ -301,12 +307,12 @@ class RekapKehadiranAnalis extends Component {
     this.cekData(bulan, tahun);
     this.setState({ isProses: false });
   };
-  
 
   formatCSVData = async (data) => {
     const sortedData = data.sort(
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
+    this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     // Gunakan Promise.all untuk menangani operasi asynchronous
     const updatedData = await Promise.all(
@@ -320,6 +326,7 @@ class RekapKehadiranAnalis extends Component {
     );
 
     console.log(updatedData, "sort");
+    this.setState({ charLoad: "Bentarr Lagi..." });
 
     const dataPengganti = sortedData.filter((a) => a.nama_pengganti !== "");
 
@@ -607,8 +614,11 @@ class RekapKehadiranAnalis extends Component {
       <>
         {this.state.isLoad ? (
           <>
-            <div className="w-full h-[100vh] flex justify-center items-center">
+            <div className="w-full h-[100vh] flex flex-col gap-4 justify-center items-center">
               <Loader />
+              <h4 className="mt-8 text-xl font-medium">
+                {this.state.charLoad}
+              </h4>
             </div>
           </>
         ) : (

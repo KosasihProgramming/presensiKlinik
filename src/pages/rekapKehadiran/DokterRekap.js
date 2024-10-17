@@ -51,10 +51,13 @@ class RekapKehadiranDokter extends Component {
       dataExport: [],
       bulan: null,
       cabang: "",
+      charLoad: "Sedang Memuat Data...",
       isLoad: false,
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
       namaKlinik: "",
+      dataGanti: [],
+      footer: [],
     };
   }
 
@@ -65,7 +68,7 @@ class RekapKehadiranDokter extends Component {
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
-
+    this.setState({ charLoad: "Sedang Mengambil data.." });
     try {
       const response = await axios.post(
         `${urlAPI}/rekap-kehadiran-dokter/get`,
@@ -83,6 +86,7 @@ class RekapKehadiranDokter extends Component {
 
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
+    this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
     const arg = { bulan, tahun, cabang };
     try {
       const response = await axios.post(
@@ -104,6 +108,19 @@ class RekapKehadiranDokter extends Component {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
 
+    const loadingMessages = [
+      "Sabar hehe...",
+      "Sedang mengambil data...",
+      "Data hampir selesai...",
+      "Harap tunggu sebentar...",
+    ];
+
+    let messageIndex = 0;
+    const intervalId = setInterval(() => {
+      this.setState({ charLoad: loadingMessages[messageIndex] });
+      messageIndex = (messageIndex + 1) % loadingMessages.length;
+    }, 10000); // interval 10 detik
+
     try {
       const response = await axios.post(
         `${urlAPI}/rekap-kehadiran-dokter/cek`,
@@ -114,8 +131,21 @@ class RekapKehadiranDokter extends Component {
           },
         }
       );
+
+      // Hentikan interval setelah permintaan selesai
+      clearInterval(intervalId);
+
+      // Setel status setelah data berhasil diambil
+      this.setState({ charLoad: "Sedang mengambil data..." });
+
+      // Panggil fungsi untuk memformat data CSV
       this.formatCSVData(response.data);
     } catch (error) {
+      // Hentikan interval jika ada error
+      clearInterval(intervalId);
+
+      // Setel status error
+      this.setState({ charLoad: "Error dalam mengambil data" });
       console.log("Error pada tanggal:", error);
     }
   };
@@ -134,6 +164,7 @@ class RekapKehadiranDokter extends Component {
         }
       );
 
+      this.setState({ charLoad: "Sedang Memeriksa Data..." });
       console.log(response.data);
       if (response.data.length > 0) {
         await this.deleteData(bulan, tahun);
@@ -279,6 +310,34 @@ class RekapKehadiranDokter extends Component {
       console.log("Error pada tanggal:", error);
     }
   };
+  getKomisiByTanggal = async (tanggal) => {
+    // Array salesIds dengan properti name dan code
+    const salesIds = [
+      { name: "Dokter Pengganti Gigi (P)", code: "DPG001" },
+      { name: "Dokter Pengganti Gigi (S)", code: "DPG002" },
+      { name: "Dokter Pengganti Gigi (M)", code: "DPG003" },
+      { name: "Dokter Pengganti Umum (P)", code: "DPU001" },
+      { name: "Dokter Pengganti Umum (S)", code: "DPU002" },
+      { name: "Dokter Pengganti Umum (M)", code: "DPU003" },
+    ];
+
+    // Array untuk menyimpan hasil yang memiliki komisi > 0
+    const result = [];
+
+    // Loop melalui setiap ID dan hitung komisi
+    for (const sales of salesIds) {
+      const komisi = await this.getDataKomisi(tanggal, sales.code); // Panggil fungsi dengan tanggal dan salesId
+
+      // Jika komisi lebih dari 0, tambahkan ke hasil
+      if (komisi > 0) {
+        result.push({ nama_dokter: sales.name, totalKomisi: komisi, tanggal }); // Tambahkan tanggal
+      }
+    }
+
+    // Kembalikan array objek yang berisi data komisi lebih dari 0
+    return result;
+  };
+
   handleSearch = (e) => {
     e.preventDefault();
     this.setState({ isProses: true, isLoad: true });
@@ -292,7 +351,7 @@ class RekapKehadiranDokter extends Component {
     const sortedData = data.sort(
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
-
+    this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
     // Gunakan Promise.all untuk menangani operasi asynchronous
     const updatedData = await Promise.all(
       sortedData.map(async (item) => {
@@ -302,11 +361,23 @@ class RekapKehadiranDokter extends Component {
     );
 
     console.log(updatedData, "sort");
+    this.setState({ charLoad: "hehe..." });
 
-    const dataPengganti = sortedData.filter(
+    const dataPengganti = updatedData.filter(
       (a) => a.nama_dokter_pengganti !== ""
     );
 
+    // Variabel untuk menyimpan hasil dari semua tanggal
+    const allKomisiResults = [];
+
+    // Iterasi setiap item dan kumpulkan hasil komisi dari tiap tanggal
+    for (const item of dataPengganti) {
+      const komisiResult = await this.getKomisiByTanggal(item.tanggal); // Dapatkan hasil komisi berdasarkan tanggal
+      allKomisiResults.push(...komisiResult); // Push semua hasil dari komisiResult ke allKomisiResults
+    }
+    this.setState({ charLoad: "Bentarr Lagi..." });
+
+    console.log("data pengganti", allKomisiResults);
     const dataArrayString = updatedData.map((obj, index) => {
       return [
         index + 1,
@@ -326,7 +397,14 @@ class RekapKehadiranDokter extends Component {
         obj.nama_petugas,
       ];
     });
-
+    const dataArrayKomPengganti = allKomisiResults.map((obj, index) => {
+      return [
+        index + 1,
+        this.formatTanggal(obj.tanggal),
+        obj.nama_dokter,
+        obj.totalKomisi,
+      ];
+    });
     const dataArrayPengganti = dataPengganti.map((obj, index) => {
       return [
         index + 1,
@@ -414,6 +492,13 @@ class RekapKehadiranDokter extends Component {
         "Paraf",
       ],
     ];
+
+    const footer = [
+      [""],
+      [""],
+      ["List Komisi Dokter Pengganti"],
+      ["No", "Tanggal", "Nama Pengganti", "Total Komisi"],
+    ];
     this.setState({ rekapKehadiran: data });
 
     // Set data ke state
@@ -421,8 +506,11 @@ class RekapKehadiranDokter extends Component {
       isLoad: false,
       judul: propertyNames,
       judul2: propertyNames2,
+      footer: footer,
+      dataGanti: dataArrayKomPengganti,
       dataExport: dataArrayString,
       dataExport2: dataArrayPengganti,
+      charLoad: "Sedang Memuat Data...",
     });
   };
 
@@ -453,7 +541,12 @@ class RekapKehadiranDokter extends Component {
     );
     const { dataExport2, judul2 } = this.state;
     // Flatten the array for csv
-    const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
+    const csvContent2 = this.convertToCSV([
+      ...judul2,
+      ...dataExport2,
+      ...this.state.footer,
+      ...this.state.dataGanti,
+    ]);
     this.downloadCSV(
       csvContent2,
       `Data Rekap Kehadiran Dokter Pengganti ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
@@ -585,8 +678,11 @@ class RekapKehadiranDokter extends Component {
       <>
         {this.state.isLoad ? (
           <>
-            <div className="w-full h-[100vh] flex justify-center items-center">
+            <div className="w-full h-[100vh] flex flex-col gap-4 justify-center items-center">
               <Loader />
+              <h4 className="mt-8 text-xl font-medium">
+                {this.state.charLoad}
+              </h4>
             </div>
           </>
         ) : (

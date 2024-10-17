@@ -51,6 +51,7 @@ class RekapKehadiranFarmasi extends Component {
       dataExport: [],
       isLoad: false,
       footer: [],
+      charLoad: "Sedang Memuat Data...",
       bulan: null,
       cabang: "",
       tahun: new Date().getFullYear(),
@@ -60,7 +61,7 @@ class RekapKehadiranFarmasi extends Component {
   }
 
   componentDidMount() {
-    this.getKlinik();
+    // this.getKlinik();
   }
 
   getKlinik = async () => {
@@ -74,6 +75,7 @@ class RekapKehadiranFarmasi extends Component {
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Mengambil data.." });
 
     try {
       const response = await axios.post(
@@ -93,6 +95,7 @@ class RekapKehadiranFarmasi extends Component {
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
 
     try {
       const response = await axios.post(
@@ -113,6 +116,7 @@ class RekapKehadiranFarmasi extends Component {
   ambilData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang mengambil data..." });
 
     try {
       const response = await axios.post(
@@ -133,6 +137,7 @@ class RekapKehadiranFarmasi extends Component {
   cekData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Memeriksa Data..." });
 
     try {
       const response = await axios.post(
@@ -310,6 +315,7 @@ class RekapKehadiranFarmasi extends Component {
       }
       return acc;
     }, []);
+    this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     // Langkah 2: Jalankan Promise.all untuk mengolah data berdasarkan tanggal unik
     const updatedData = await Promise.all(
@@ -323,6 +329,7 @@ class RekapKehadiranFarmasi extends Component {
 
     const totalNet =
       (70 * updatedData.reduce((total, detail) => total + detail.net, 0)) / 100;
+    this.setState({ charLoad: "Bentarr Lagi..." });
 
     console.log(totalNet, "todal net");
     // const totalNet= this.getDataKomisi()
@@ -598,8 +605,11 @@ class RekapKehadiranFarmasi extends Component {
       <>
         {this.state.isLoad ? (
           <>
-            <div className="w-full h-[100vh] flex justify-center items-center">
+            <div className="w-full h-[100vh] flex flex-col gap-4 justify-center items-center">
               <Loader />
+              <h4 className="mt-8 text-xl font-medium">
+                {this.state.charLoad}
+              </h4>
             </div>
           </>
         ) : (

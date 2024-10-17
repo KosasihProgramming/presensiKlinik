@@ -54,6 +54,7 @@ class RekapKehadiranApoteker extends Component {
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
       namaKlinik: "",
+      charLoad: "Sedang Memuat Data...",
       cabang: "",
     };
   }
@@ -73,6 +74,7 @@ class RekapKehadiranApoteker extends Component {
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Mengambil data.." });
 
     try {
       const response = await axios.post(
@@ -92,6 +94,7 @@ class RekapKehadiranApoteker extends Component {
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
 
     try {
       const response = await axios.post(
@@ -112,6 +115,7 @@ class RekapKehadiranApoteker extends Component {
   ambilData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang mengambil data..." });
 
     try {
       const response = await axios.post(
@@ -133,6 +137,7 @@ class RekapKehadiranApoteker extends Component {
   cekData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Memeriksa Data..." });
 
     try {
       const response = await axios.post(
@@ -173,6 +178,7 @@ class RekapKehadiranApoteker extends Component {
     const sortedData = data.sort(
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
+    this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     const groupedByProductId = sortedData.reduce((acc, item) => {
       // Jika productid belum ada di accumulator, inisialisasi
@@ -197,6 +203,7 @@ class RekapKehadiranApoteker extends Component {
       acc[item.barcode].dendaPulangCepat += item.denda_pulang_cepat;
       return acc;
     }, {});
+    this.setState({ charLoad: "Bentarr Lagi..." });
 
     // Mengonversi hasil menjadi array
     const result = Object.values(groupedByProductId);
@@ -442,8 +449,11 @@ class RekapKehadiranApoteker extends Component {
       <>
         {this.state.isLoad ? (
           <>
-            <div className="w-full h-[100vh] flex justify-center items-center">
+            <div className="w-full h-[100vh] flex flex-col gap-4 justify-center items-center">
               <Loader />
+              <h4 className="mt-8 text-xl font-medium">
+                {this.state.charLoad}
+              </h4>
             </div>
           </>
         ) : (

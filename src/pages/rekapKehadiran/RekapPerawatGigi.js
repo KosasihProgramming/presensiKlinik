@@ -50,6 +50,7 @@ class RekapKehadiranPerawatGigi extends Component {
       dataExport2: [],
       isLoad: false,
       dataExport: [],
+      charLoad: "Sedang Memuat Data...",
       bulan: null,
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
@@ -73,6 +74,7 @@ class RekapKehadiranPerawatGigi extends Component {
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Mengambil data.." });
 
     try {
       const response = await axios.post(
@@ -92,6 +94,7 @@ class RekapKehadiranPerawatGigi extends Component {
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
 
     try {
       const response = await axios.post(
@@ -112,6 +115,7 @@ class RekapKehadiranPerawatGigi extends Component {
   ambilData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang mengambil data..." });
 
     try {
       const response = await axios.post(
@@ -133,6 +137,7 @@ class RekapKehadiranPerawatGigi extends Component {
   cekData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
+    this.setState({ charLoad: "Sedang Memeriksa Data..." });
 
     try {
       const response = await axios.post(
@@ -311,6 +316,7 @@ class RekapKehadiranPerawatGigi extends Component {
     const sortedData = data.sort(
       (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
     );
+    this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     // Gunakan Promise.all untuk menangani operasi asynchronous
     const updatedData = await Promise.all(
@@ -324,6 +330,7 @@ class RekapKehadiranPerawatGigi extends Component {
     );
 
     console.log(updatedData, "sort");
+    this.setState({ charLoad: "Bentarr Lagi..." });
 
     const dataPengganti = sortedData.filter((a) => a.nama_pengganti !== "");
 
@@ -606,8 +613,11 @@ class RekapKehadiranPerawatGigi extends Component {
       <>
         {this.state.isLoad ? (
           <>
-            <div className="w-full h-[100vh] flex justify-center items-center">
+            <div className="w-full h-[100vh] flex flex-col gap-4 justify-center items-center">
               <Loader />
+              <h4 className="mt-8 text-xl font-medium">
+                {this.state.charLoad}
+              </h4>
             </div>
           </>
         ) : (
