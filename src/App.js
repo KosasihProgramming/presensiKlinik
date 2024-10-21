@@ -85,114 +85,16 @@ function App() {
   return (
     <div className="bg-gray-200 pb-10">
       <Router>
-        {/* {isMobile ? (
-          <> */}
-        {/* {isLoggedIn ? (
+        {isMobile ? (
           <>
-            <Routes>
-              <Route path="*" element={<Navigate to="/jadwal-kehadiran" />} />
+            {isLoggedIn ? (
+              <>
+                <Routes>
+                  <Route
+                    path="*"
+                    element={<Navigate to="/jadwal-kehadiran" />}
+                  />
 
-              <Route
-                path="/jadwal-kehadiran"
-                element={<JadwalKehadiranMobile />}
-              />
-              <Route
-                path="/detail-jadwal-mobile/:idJadwal"
-                element={<DetailJadwalMobile />}
-              />
-            </Routes>
-          </>
-        ) : (
-          <>
-            <Routes>
-              <Route path="/" Component={LoginMobile} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </>
-        )} */}
-        {/* </>
-        ) : ( */}
-
-        {/* <> */}
-        {isAkses ? (
-          <>
-            <Navigation
-              openIzin={() => {
-                setIsizin(!isIzin);
-              }}
-            />
-            <Routes>
-              {isLoggedIn ? (
-                <>
-                  {/* <Route path="/" element={<Home />} /> */}
-                  <Route path="/shift" element={<Shift />} />
-                  <Route
-                    path="/jadwal-kehadiran"
-                    element={<JadwalKehadiran />}
-                  />
-                  <Route
-                    path="/jadwal/detail-jadwal/:idJadwal"
-                    element={<DetailJadwal />}
-                  />
-                  <Route path="/kehadiran" element={<Kehadiran />} />
-                  <Route path="/" element={<Absen />} />
-                  <Route path="/presensi" element={<Absen />} />
-                  <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
-                  <Route
-                    path="/rekap-kehadiran-dokter"
-                    element={<RekapKehadiranDokter />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-dokter-gigi"
-                    element={<RekapKehadiranDokterGigi />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-perawat"
-                    element={<RekapKehadiranPerawat />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-apoteker"
-                    element={<RekapKehadiranApoteker />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-analis"
-                    element={<RekapKehadiranAnalis />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-perawat-gigi"
-                    element={<RekapKehadiranPerawatGigi />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-farmasi"
-                    element={<RekapKehadiranFarmasi />}
-                  />
-                  <Route
-                    path="/rekap-kehadiran-cs"
-                    element={<RekapKehadiranPegawai />}
-                  />
-                  <Route path="/rekap-gaji" element={<RekapGajiPerShift />} />
-                  <Route
-                    path="/rekap-gaji-dokter"
-                    element={<RekapGajiDokter />}
-                  />
-                  <Route
-                    path="/rekap-shift-perawat-gigi"
-                    element={<RekapGajiShiftPerawat />}
-                  />
-                  <Route
-                    path="/rekap-periode-perawat-gigi"
-                    element={<RekapGajiPeriodePerawat />}
-                  />
-                  <Route
-                    path="/rekap-shift-perawat-umum"
-                    element={<RekapShiftPerawatUmum />}
-                  />
-                  <Route path="/data-pegawai" element={<DataPegawai />} />
-                </>
-              ) : (
-                <>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/kehadiran" element={<Kehadiran />} />
                   <Route
                     path="/jadwal-kehadiran"
                     element={<JadwalKehadiranMobile />}
@@ -201,29 +103,138 @@ function App() {
                     path="/detail-jadwal-mobile/:idJadwal"
                     element={<DetailJadwalMobile />}
                   />
-                  <Route path="/" element={<Absen />} />
-                  <Route path="/presensi" element={<Absen />} />
-                  <Route path="/pulang/:id_kehadiran" element={<Pulang />} />
-                  {sessionStorage.getItem("isSuccess") && (
-                    <Route path="/success" element={<SendedForm />} />
-                  )}
-                </>
-              )}
-            </Routes>
+                </Routes>
+              </>
+            ) : (
+              <>
+                <Routes>
+                  <Route path="/" Component={LoginMobile} />
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </>
+            )}
           </>
         ) : (
           <>
-            <Routes>
-              <Route path="/" element={<NoAkses />} />
-              <Route
-                path="/device-access-kosasih/2024"
-                element={<SetDevice />}
-              />
-            </Routes>
+            {isAkses ? (
+              <>
+                <Navigation
+                  openIzin={() => {
+                    setIsizin(!isIzin);
+                  }}
+                />
+                <Routes>
+                  {isLoggedIn ? (
+                    <>
+                      {/* <Route path="/" element={<Home />} /> */}
+                      <Route path="/shift" element={<Shift />} />
+                      <Route
+                        path="/jadwal-kehadiran"
+                        element={<JadwalKehadiran />}
+                      />
+                      <Route
+                        path="/jadwal/detail-jadwal/:idJadwal"
+                        element={<DetailJadwal />}
+                      />
+                      <Route path="/kehadiran" element={<Kehadiran />} />
+                      <Route path="/" element={<Absen />} />
+                      <Route path="/presensi" element={<Absen />} />
+                      <Route
+                        path="/pulang/:id_kehadiran"
+                        element={<Pulang />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-dokter"
+                        element={<RekapKehadiranDokter />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-dokter-gigi"
+                        element={<RekapKehadiranDokterGigi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-perawat"
+                        element={<RekapKehadiranPerawat />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-apoteker"
+                        element={<RekapKehadiranApoteker />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-analis"
+                        element={<RekapKehadiranAnalis />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-perawat-gigi"
+                        element={<RekapKehadiranPerawatGigi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-farmasi"
+                        element={<RekapKehadiranFarmasi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-cs"
+                        element={<RekapKehadiranPegawai />}
+                      />
+                      <Route
+                        path="/rekap-gaji"
+                        element={<RekapGajiPerShift />}
+                      />
+                      <Route
+                        path="/rekap-gaji-dokter"
+                        element={<RekapGajiDokter />}
+                      />
+                      <Route
+                        path="/rekap-shift-perawat-gigi"
+                        element={<RekapGajiShiftPerawat />}
+                      />
+                      <Route
+                        path="/rekap-periode-perawat-gigi"
+                        element={<RekapGajiPeriodePerawat />}
+                      />
+                      <Route
+                        path="/rekap-shift-perawat-umum"
+                        element={<RekapShiftPerawatUmum />}
+                      />
+                      <Route path="/data-pegawai" element={<DataPegawai />} />
+                    </>
+                  ) : (
+                    <>
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/kehadiran" element={<Kehadiran />} />
+                      <Route
+                        path="/jadwal-kehadiran"
+                        element={<JadwalKehadiranMobile />}
+                      />
+                      <Route
+                        path="/detail-jadwal-mobile/:idJadwal"
+                        element={<DetailJadwalMobile />}
+                      />
+                      <Route path="/" element={<Absen />} />
+                      <Route path="/presensi" element={<Absen />} />
+                      <Route
+                        path="/pulang/:id_kehadiran"
+                        element={<Pulang />}
+                      />
+                      {sessionStorage.getItem("isSuccess") && (
+                        <Route path="/success" element={<SendedForm />} />
+                      )}
+                    </>
+                  )}
+                </Routes>
+              </>
+            ) : (
+              <>
+                <Routes>
+                  <Route path="/" element={<NoAkses />} />
+                  <Route
+                    path="/device-access-kosasih/2024"
+                    element={<SetDevice />}
+                  />
+                </Routes>
+              </>
+            )}
           </>
         )}
-        {/* </>
-        )} */}
       </Router>
     </div>
   );
