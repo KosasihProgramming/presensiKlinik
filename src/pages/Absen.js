@@ -358,8 +358,8 @@ class Absen extends Component {
     const pindahKlinik = this.state.isPindahKlinik;
 
     let telatMenit = 0;
-    const chatId = "-1001812360373";
-    const thread = "4294967304";
+    const chatId = "-1001859405516";
+    const thread = "18";
     console.log("Jam Masuk");
     if (parseInt(telat) < 0 || lanjutShift == 1) {
       telatMenit = 0;
