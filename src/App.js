@@ -85,7 +85,7 @@ function App() {
   return (
     <div className="bg-gray-200 pb-10">
       <Router>
-        {/* {isMobile ? (
+        {isMobile ? (
           <>
             {isLoggedIn ? (
               <>
@@ -115,7 +115,7 @@ function App() {
             )}
           </>
         ) : (
-          <> */}
+          <>
             {isAkses ? (
               <>
                 <Navigation
@@ -233,8 +233,8 @@ function App() {
                 </Routes>
               </>
             )}
-          {/* </>
-        )} */}
+          </>
+        )}
       </Router>
     </div>
   );
