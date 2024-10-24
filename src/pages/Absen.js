@@ -145,6 +145,15 @@ class Absen extends Component {
         .then((response) => {
           console.log(response.data);
           console.log(dataIzin);
+
+          this.setState({
+            selectedJadwal: {},
+            idDetailJadwal: 0,
+            idJadwal: 0,
+            idShift: 0,
+            harusMasuk: "",
+          });
+
           this.setState({
             dataJadwalHariIni: response.data.jadwal,
             namaPegawai: response.data.barcode[0].nama,
@@ -304,7 +313,28 @@ class Absen extends Component {
       lokasiAbsen,
       dataIzin,
       cabang,
+      selectedJadwal,
     } = this.state;
+
+    if (
+      Object.keys(selectedJadwal).length === 0 &&
+      idDetailJadwal === 0 &&
+      idJadwal === 0 &&
+      idShift === 0 &&
+      harusMasuk === "" &&
+      this.state.namaPetugas === ""
+    ) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Harap Lengkapi Data",
+      });
+      this.setState({
+        isProses: false,
+        isLoad: false,
+      });
+      return true; // Jika semua kosong, return true
+    }
 
     const namaInstansi = this.state.namaKlinik;
     const tanggalHariIni = this.getTodayDate();
@@ -375,7 +405,6 @@ class Absen extends Component {
       this.state.selectedJadwal.tanggal
     );
     console.log(this.state.selectedJadwal, "jadwal terpilih");
-
     if (
       cekJam == true &&
       this.state.selectedJadwal.jam_masuk !=
@@ -394,10 +423,11 @@ class Absen extends Component {
       });
     } else {
       console.log("pegawi", pegawai);
-      if (!pegawai[0].nik.includes("AP")) {
+      const nik = pegawai[0].nik;
+      if (!nik.includes("AP")) {
         const jabatan = await this.cekJabatan(pegawai[0]);
         if (jabatan == true) {
-          if (pindahKlinik === 1) {
+          if (pindahKlinik == 1) {
             if (telatMenit > 0 && telatMenit <= 30) {
               denda = 7500;
             } else if (telatMenit > 30) {
@@ -421,6 +451,7 @@ class Absen extends Component {
                 await this.sendMessageToTelegram(message, thread, chatId);
               } else if (durasi > 29) {
                 denda = (durasi - 29) * 1000 + 20000 + 7500;
+
                 const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
                 await this.sendMessageToTelegram(message, thread, chatId);
               }
@@ -428,7 +459,7 @@ class Absen extends Component {
           }
           // Akhir logic aturan denda pindah klinik
           // Logic Aturan Denda Normal
-          else if (pindahKlinik === 0) {
+          else if (pindahKlinik == 0) {
             if (telatMenit <= 0) {
               denda = 0;
             } else if (telatMenit > 0 && telatMenit <= 4) {
@@ -457,27 +488,60 @@ class Absen extends Component {
             }
           }
         } else {
-          if (telatMenit <= 0) {
-            denda = 0;
-          } else if (telatMenit > 0 && telatMenit <= 4) {
-            denda = 2500;
-            const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 4 && telatMenit <= 14) {
-            denda = 10000;
-            const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 14 && telatMenit <= 29) {
-            denda = 15000;
-            const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (telatMenit > 29) {
-            denda = 25000;
-            const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
-          } else if (!idDetailJadwal) {
-            const message = `${this.state.namaPegawai} tidak ada jadwal & berusaha melakukan absen di ${this.state.cabang}`;
-            await this.sendMessageToTelegram(message, thread, chatId);
+          if (pindahKlinik == 1) {
+            if (telatMenit > 0 && telatMenit <= 30) {
+              denda = 7500;
+            } else if (telatMenit > 30) {
+              const durasi = telatMenit - 30;
+              if (durasi > 0 && durasi <= 4) {
+                denda = 2500 + 7500;
+
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 4 && durasi <= 9) {
+                denda = 10000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 9 && durasi <= 19) {
+                denda = 15000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 19 && durasi <= 29) {
+                denda = 25000 + 7500;
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              } else if (durasi > 29) {
+                denda = (durasi - 29) * 1000 + 25000 + 7500;
+
+                const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+                await this.sendMessageToTelegram(message, thread, chatId);
+              }
+            }
+          }
+          if (pindahKlinik == 0) {
+            if (telatMenit <= 0) {
+              denda = 0;
+            } else if (telatMenit > 0 && telatMenit <= 4) {
+              denda = 2500;
+              const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            } else if (telatMenit > 4 && telatMenit <= 14) {
+              denda = 10000;
+              const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            } else if (telatMenit > 14 && telatMenit <= 29) {
+              denda = 15000;
+              const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            } else if (telatMenit > 29) {
+              denda = (telatMenit - 29) * 1000 + 25000;
+              alert("disini");
+              const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            } else if (!idDetailJadwal) {
+              const message = `${this.state.namaPegawai} tidak ada jadwal & berusaha melakukan absen di ${this.state.cabang}`;
+              await this.sendMessageToTelegram(message, thread, chatId);
+            }
           }
         }
       }
@@ -492,7 +556,7 @@ class Absen extends Component {
       const diganti = this.state.isDokterPengganti;
       const namaDokterPengganti = this.state.dokterPengganti;
 
-      if (diganti === 1) {
+      if (diganti == 1) {
         const id = "-1001859405516";
         const topic = "14";
         const message = `<b>dr. Tetap</b>: ${this.state.namaPegawai}\n<b>Digantikan oleh</b> :${namaDokterPengganti}\n<b>Pada Tanggal : ${tanggalHariIni}</b>\n<b>Waktu Shift</b> :${dataJadwalHariIni[0].jam_masuk} : ${dataJadwalHariIni[0].jam_pulang}\n<b>Petugas Penjaga</b> : ${this.state.namaPetugas}\n<b>Lokasi Klinik</b> : ${namaKlinik}`;
@@ -549,7 +613,28 @@ class Absen extends Component {
               focusCancel: true,
             });
           }
-          this.setState({ isProses: false, isLoad: false });
+          this.setState({
+            selectedJadwal: {},
+            idDetailJadwal: 0,
+            idJadwal: 0,
+            idShift: 0,
+            harusMasuk: "",
+          });
+          this.setState({
+            dataJadwalHariIni: [],
+            namaPegawai: "",
+            pegawai: {},
+          });
+
+          this.setState({
+            isProses: false,
+            isLoad: false,
+            isPindahKlinik: false,
+            isLanjutShift: false,
+            isDokterPengganti: false,
+            dokterPengganti: "",
+            keterangan: "",
+          });
         })
         .catch((error) => {
           this.setState({ isProses: false, isLoad: false });
