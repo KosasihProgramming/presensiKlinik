@@ -569,7 +569,6 @@ class JadwalKehadiranMobile extends Component {
             <Link
               to={"/today-jadwal-mobile"}
               className="bg-teal-500 hover:bg-white hover:text-teal-600 duration-300 hover:scale-105 border hover:border-teal-500 text-white rounded-xl shadow-lg px-10 w-[15rem] py-3 flex justify-center items-center"
-              onClick={this.getJadwal}
             >
               Cek Jadwal
             </Link>
@@ -593,8 +592,6 @@ class JadwalKehadiranMobile extends Component {
               className="p-2 border rounded-md border-teal-600 w-full cursor-pointer shadow-md"
               value={this.state.searchQuery}
               onChange={this.handleSearchChange}
-
-              
             />
           </div>
           <div className="w-full p-4 flex items-center justify-center">

@@ -951,7 +951,6 @@ class JadwalKehadiran extends Component {
             />
             <Link
               to={"/today-jadwal"}
-              type="submit"
               className="bg-teal-500 hover:bg-white hover:text-teal-600 duration-300 hover:scale-105 border hover:border-teal-500 text-white rounded-xl shadow-lg px-10 w-[15rem] py-3 flex justify-center items-center"
               onClick={this.handleUpdate}
             >
