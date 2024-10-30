@@ -125,7 +125,7 @@ class Absen extends Component {
     // Set timer untuk menjalankan fungsi tambahan setelah 5 detik
     const newTimer = setTimeout(() => {
       this.handleSubmit();
-    }, 8000);
+    }, 6000);
     this.setState({ timer: newTimer }); // Simpan ID timer dalam state
   };
   getKlinik = async () => {
