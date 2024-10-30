@@ -8,6 +8,8 @@ import Swal from "sweetalert2";
 import ModalAddIzin from "../components/modalIzin";
 import dayjs from "dayjs";
 import imageCompression from "browser-image-compression";
+import Face from "../style/face.png";
+
 import Loader from "../function/loader";
 const Pulang = () => {
   const webcamRef = useRef(null);
@@ -38,8 +40,10 @@ const Pulang = () => {
     namaShift: "",
     isIzin: false,
     isProses: false,
+    isComp: false,
     jadwal: null,
     ket: "",
+    errorMessage: "",
     tanggal: dayjs().locale("id").format("YYYY-MM-DD"),
   });
 
@@ -333,6 +337,40 @@ const Pulang = () => {
 
     return Math.abs(selisihMenit);
   }
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+
+    if (value.length === 5) {
+      setState({
+        ...state,
+        barCode: value,
+        errorMessage: "Benar",
+        isComp: true,
+      });
+    } else if (value.length === 4) {
+      setState({
+        ...state,
+        barCode: value,
+        isComp: false,
+        errorMessage: "Karakter harus 5 karakter, awali Barcode dengan angka 0",
+      });
+    } else if (value.length > 5) {
+      setState({
+        ...state,
+        barCode: value,
+        isComp: false,
+
+        errorMessage: "Salah, Karakter Melebihi 5 Karakter",
+      });
+    } else {
+      setState({
+        ...state,
+        isComp: false,
+        barCode: value,
+        errorMessage: "Isi Barcode Kehadiran Anda",
+      });
+    }
+  };
   return (
     <div>
       {state.isLoad == true ? (
@@ -356,13 +394,19 @@ const Pulang = () => {
             />
             <div className="rounded-lg bg-white shadow-lg">
               <div className="grid grid-cols-2">
-                <div className="flex p-10 h-[70vh] justify-center items-center">
+                <div className="flex p-10 h-[70vh] justify-center items-center relative">
                   <Webcam
                     className="rounded-3xl"
                     audio={false}
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
                   />
+                  <div className="w-full   px-[2.5rem] py-[7rem]  flex justify-center items-center absolute ">
+                    <img
+                      src={Face}
+                      className="w-full  z-[99] object-cover rounded-2xl"
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col justify-center">
                   <h4 className="title">Presensi pulang</h4>
@@ -377,11 +421,16 @@ const Pulang = () => {
                     <div className="flex flex-col gap-4 w-[60%]">
                       <input
                         type="number"
-                        onChange={(e) =>
-                          setState({ ...state, barCode: e.target.value })
-                        }
+                        onChange={(e) => handleInputChange(e)}
                         className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
                       />
+                      <p
+                        className={`${
+                          state.isComp ? "text-teal-600" : "text-red-500"
+                        } text-base mt-1`}
+                      >
+                        {state.errorMessage}
+                      </p>
                       <input
                         type="text"
                         placeholder="Keterangan"

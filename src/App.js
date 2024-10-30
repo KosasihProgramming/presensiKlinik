@@ -39,6 +39,9 @@ import SetDevice from "./pages/localstorage";
 import JadwalKehadiranMobile from "./pages/mobile/Jadwal";
 import DetailJadwalMobile from "./pages/mobile/DetailJadwal";
 import LoginMobile from "./pages/mobile/Login";
+import TodayJadwal from "./pages/TodayJadwal";
+import Navbar from "./components/navbar";
+import TodayJadwalMobile from "./pages/mobile/JadwalToday";
 
 function App() {
   const isLoggedIn = sessionStorage.getItem("user");
@@ -94,7 +97,7 @@ function App() {
                     path="*"
                     element={<Navigate to="/jadwal-kehadiran" />}
                   />
-
+                  <Route path="/today-jadwal" element={<TodayJadwal />} />
                   <Route
                     path="/jadwal-kehadiran"
                     element={<JadwalKehadiranMobile />}
@@ -103,11 +106,19 @@ function App() {
                     path="/detail-jadwal-mobile/:idJadwal"
                     element={<DetailJadwalMobile />}
                   />
+                  <Route
+                    path="/today-jadwal-mobile"
+                    element={<TodayJadwalMobile />}
+                  />
                 </Routes>
               </>
             ) : (
               <>
                 <Routes>
+                  <Route
+                    path="/today-jadwal-mobile"
+                    element={<TodayJadwalMobile />}
+                  />
                   <Route path="/" Component={LoginMobile} />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
@@ -118,16 +129,18 @@ function App() {
           <>
             {isAkses ? (
               <>
-                <Navigation
-                  openIzin={() => {
-                    setIsizin(!isIzin);
-                  }}
-                />
+                <Navbar />
                 <Routes>
                   {isLoggedIn ? (
                     <>
                       {/* <Route path="/" element={<Home />} /> */}
                       <Route path="/shift" element={<Shift />} />
+                      <Route path="/today-jadwal" element={<TodayJadwal />} />
+                      <Route
+                        path="/today-jadwal-mobile"
+                        element={<TodayJadwalMobile />}
+                      />
+
                       <Route
                         path="/jadwal-kehadiran"
                         element={<JadwalKehadiran />}
@@ -199,11 +212,16 @@ function App() {
                     </>
                   ) : (
                     <>
+                      <Route path="/today-jadwal" element={<TodayJadwal />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/kehadiran" element={<Kehadiran />} />
                       <Route
                         path="/jadwal-kehadiran"
                         element={<JadwalKehadiranMobile />}
+                      />
+                      <Route
+                        path="/today-jadwal-mobile"
+                        element={<TodayJadwalMobile />}
                       />
                       <Route
                         path="/detail-jadwal-mobile/:idJadwal"
@@ -214,6 +232,58 @@ function App() {
                       <Route
                         path="/pulang/:id_kehadiran"
                         element={<Pulang />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-dokter"
+                        element={<RekapKehadiranDokter />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-dokter-gigi"
+                        element={<RekapKehadiranDokterGigi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-perawat"
+                        element={<RekapKehadiranPerawat />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-apoteker"
+                        element={<RekapKehadiranApoteker />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-analis"
+                        element={<RekapKehadiranAnalis />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-perawat-gigi"
+                        element={<RekapKehadiranPerawatGigi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-farmasi"
+                        element={<RekapKehadiranFarmasi />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-cs"
+                        element={<RekapKehadiranPegawai />}
+                      />
+                      <Route
+                        path="/rekap-gaji"
+                        element={<RekapGajiPerShift />}
+                      />
+                      <Route
+                        path="/rekap-gaji-dokter"
+                        element={<RekapGajiDokter />}
+                      />
+                      <Route
+                        path="/rekap-shift-perawat-gigi"
+                        element={<RekapGajiShiftPerawat />}
+                      />
+                      <Route
+                        path="/rekap-periode-perawat-gigi"
+                        element={<RekapGajiPeriodePerawat />}
+                      />
+                      <Route
+                        path="/rekap-shift-perawat-umum"
+                        element={<RekapShiftPerawatUmum />}
                       />
                       {sessionStorage.getItem("isSuccess") && (
                         <Route path="/success" element={<SendedForm />} />
@@ -226,6 +296,7 @@ function App() {
               <>
                 <Routes>
                   <Route path="/" element={<NoAkses />} />
+
                   <Route
                     path="/device-access-kosasih/2024"
                     element={<SetDevice />}

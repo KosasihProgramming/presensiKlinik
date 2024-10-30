@@ -216,13 +216,19 @@ class DetailJadwal extends Component {
       // const formattedDate = tanggal1.format("YYYY-MM-DD");
     });
   };
-
   handleSubmit = (e) => {
     e.preventDefault();
-    const { idShift, idJadwal, tanggal } = this.state;
+    let { idShift, idJadwal, tanggal } = this.state;
+
+    // Ubah format tanggal jika formatnya YYYY-MM-DD
+    if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
+      tanggal = tanggal.replace(/-/g, "/"); // Ganti "-" menjadi "/"
+    }
+
     console.log(idJadwal);
     console.log(idShift);
     console.log(tanggal);
+
     // Cek kelengkapan form
     if (!tanggal || !idShift || !idJadwal) {
       Swal.fire({
@@ -277,10 +283,11 @@ class DetailJadwal extends Component {
     console.log(tanggalAwalOtomatis);
     console.log(tanggalAkhirOtomatis);
 
+    // Mendapatkan rentang tanggal antara tanggalAwalOtomatis dan tanggalAkhirOtomatis
     const rentangTanggal = this.getDatesBetween(
       tanggalAwalOtomatis,
       tanggalAkhirOtomatis
-    );
+    ).map((tanggal) => tanggal.replace(/-/g, "/")); // Ubah format tanggal menjadi YYYY/MM/DD
 
     console.log("rentang", rentangTanggal);
 
@@ -414,9 +421,22 @@ class DetailJadwal extends Component {
           newArray.push(rowValues);
         }
         newArray.unshift(propertyNames2);
+        const detailJadwalData = newData
+          .slice()
+          .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+          .map((data) => ({
+            tanggal: this.formatStringTanggal(data.tanggal),
+            id: data.detail_jadwal_id,
+            nama_shift: data.nama_shift,
+            jam_masuk: data.jam_masuk,
+            jam_pulang: data.jam_pulang,
+            hadir: data.hadir,
+            nominal: data.nominal_hadir,
+          }));
+
         console.log(newData, "poro");
         this.setState({
-          dataDetail: newData,
+          dataDetail: detailJadwalData,
           judul: propertyNames,
           dataExport: newArray,
           dataExportDetail: dataExportDetail,
@@ -515,7 +535,7 @@ class DetailJadwal extends Component {
     }).then((result) => {
       if (result.isConfirmed) {
         axios
-          .delete(urlAPI + `/detail-jadwal/delete/${idDetail}`)
+          .post(urlAPI + `/detail-jadwal/delete`, { idDetail }) // Change to POST with idDetail in the payload
           .then((response) => {
             Swal.fire({
               icon: "success",
@@ -733,18 +753,15 @@ class DetailJadwal extends Component {
   render() {
     // const tanggalNew = new Date(data.tanggal);
     // const tanggalTarget = tanggalNew.toLocaleDateString().split("T")[0];
-    const dataDetail = this.state.dataDetail
-      .slice()
-      .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-      .map((data) => [
-        this.formatStringTanggal(data.tanggal),
-        data.nama_shift,
-        data.jam_masuk,
-        data.jam_pulang,
-        data.hadir,
-        data.nominal_hadir,
-      ]);
 
+    const dataDetailJadwal = this.state.dataDetail.map((data) => [
+      data.tanggal,
+      data.nama_shift,
+      data.jam_masuk,
+      data.jam_pulang,
+      data.hadir,
+      data.nominal,
+    ]);
     const columns = [
       "Tanggal",
       "Shift",
@@ -767,7 +784,7 @@ class DetailJadwal extends Component {
                 </button>
                 <button
                   className="rounded-lg bg-red-500 px-4 py-2 font-bold text-white cursor-pointer hover:bg-red-700"
-                  onClick={() => this.handleDelete(data.detail_jadwal_id)}
+                  onClick={() => this.handleDelete(data.id)}
                 >
                   Hapus
                 </button>
@@ -1283,7 +1300,7 @@ class DetailJadwal extends Component {
                 </div>
                 <MUIDataTable
                   title={"Data Detail Jadwal"}
-                  data={dataDetail}
+                  data={dataDetailJadwal}
                   columns={columns}
                   options={options}
                 />

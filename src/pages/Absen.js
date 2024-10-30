@@ -21,6 +21,9 @@ import { db, dbImage } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { ArrowBackIosNewOutlined } from "@mui/icons-material";
 import Loader from "../function/loader";
+import dayjs from "dayjs";
+import "dayjs/locale/en-gb";
+import Face from "../style/face.png";
 // import { stat } from "fs";
 
 class Absen extends Component {
@@ -32,28 +35,36 @@ class Absen extends Component {
       idJadwal: 0,
       idDetailJadwal: 0,
       idShift: 0,
+      tanggal: dayjs().locale("id").format("YYYY/MM/DD"),
       fotoMasuk: "",
       fotoKeluar: "",
       jamMasuk: "",
       jamKeluar: "",
+      no_hp_pengganti: "",
       durasi: 0,
       dataIzin: [],
       dendaTelat: 0,
+      isPerawat: false,
       isPindahKlinik: 0,
       pegawai: {},
       cabang: {},
       namaPetugas: "",
       keterangan: "",
       isLoad: false,
+      isComp: false,
       isLanjutShift: 0,
+      isSearch: false,
       isDokterPengganti: 0,
       lembur: 0,
+      dataPerawat: [],
       dokterPengganti: "",
       harusMasuk: "",
+      errorMessage: "",
       dataJadwalHariIni: [],
       selectedJadwal: {},
       namaPegawai: "",
       namaKlinik: "",
+      timer: null, // Menyimpan ID timer untuk pembatalan
       dataPosisi: [
         { text: "Kantor Pusat", value: "Kantor Pusat" },
         { text: "Klinik Kosasih Kemiling", value: "Klinik Kosasih Kemiling" },
@@ -102,6 +113,7 @@ class Absen extends Component {
         .then((response) => {
           console.log("Berhasil Di izinkan", response);
           this.setState({ cabang: response.data[0].cabang });
+          this.getKehadiranPerawat(response.data[0].cabang);
         })
         .catch((error) => {
           console.log("Error:", error);
@@ -109,6 +121,13 @@ class Absen extends Component {
     }
   };
 
+  handleCheckSubmit = () => {
+    // Set timer untuk menjalankan fungsi tambahan setelah 5 detik
+    const newTimer = setTimeout(() => {
+      this.handleSubmit();
+    }, 8000);
+    this.setState({ timer: newTimer }); // Simpan ID timer dalam state
+  };
   getKlinik = async () => {
     try {
       const response = await axios.get(`${urlAPI}/klinik`);
@@ -118,8 +137,7 @@ class Absen extends Component {
     }
   };
 
-  handleSearch = (e) => {
-    e.preventDefault();
+  handleSearch = () => {
     this.setState({ isLoad: true });
     const { barcode } = this.state;
     const jamMasuk = this.getCurrentTime();
@@ -144,25 +162,55 @@ class Absen extends Component {
         .get(`${urlAPI}/barcode/jadwal/${barcode}`)
         .then((response) => {
           console.log(response.data);
-          console.log(dataIzin);
 
-          this.setState({
-            selectedJadwal: {},
-            idDetailJadwal: 0,
-            idJadwal: 0,
-            idShift: 0,
-            harusMasuk: "",
-          });
-
-          this.setState({
-            dataJadwalHariIni: response.data.jadwal,
-            namaPegawai: response.data.barcode[0].nama,
-            pegawai: response.data.barcode,
-          });
           if (
             response.data.jadwal.length > 0 &&
             response.data.barcode.length > 0
           ) {
+            const sortData = response.data.jadwal.sort((a, b) => {
+              const timeA = new Date(`1970-01-01T${a.jam_masuk}Z`).getTime();
+              const timeB = new Date(`1970-01-01T${b.jam_masuk}Z`).getTime();
+              return timeA - timeB;
+            });
+
+            // Mendapatkan waktu saat ini dalam format yang sama
+            const now = new Date();
+            const currentTime = new Date(
+              `1970-01-01T${now.toTimeString().split(" ")[0]}Z`
+            ).getTime();
+
+            // Mencari objek dengan jam_masuk terdekat dengan waktu saat ini
+            const closestTimeObj = sortData.reduce((closest, current) => {
+              const currentDiff = Math.abs(
+                new Date(`1970-01-01T${current.jam_masuk}Z`).getTime() -
+                  currentTime
+              );
+              const closestDiff = Math.abs(
+                new Date(`1970-01-01T${closest.jam_masuk}Z`).getTime() -
+                  currentTime
+              );
+
+              return currentDiff < closestDiff ? current : closest;
+            });
+
+            console.log(closestTimeObj, "closes");
+
+            this.getKehadiranPerawat(this.state.cabang);
+
+            this.setState({
+              selectedJadwal: closestTimeObj,
+              idDetailJadwal: closestTimeObj.id,
+              idJadwal: closestTimeObj.id_jadwal,
+              idShift: closestTimeObj.id_shift,
+              harusMasuk: closestTimeObj.jam_masuk,
+            });
+
+            this.setState({
+              dataJadwalHariIni: sortData,
+              namaPegawai: response.data.barcode[0].nama,
+              pegawai: response.data.barcode,
+              isSearch: true,
+            });
             toast.success("Jadwal ditemukan", {
               position: "top-right",
               autoClose: 5000,
@@ -174,6 +222,7 @@ class Absen extends Component {
               theme: "light",
               transition: Bounce,
             });
+            this.handleCheckSubmit();
           } else if (
             response.data.jadwal.length == 0 &&
             response.data.barcode.length == 0
@@ -210,6 +259,8 @@ class Absen extends Component {
         })
         .catch((err) => {
           console.error(err);
+          this.setState({ isLoad: false });
+
           toast.error("Tidak dapat menemukan barcode", {
             position: "top-right",
             autoClose: 5000,
@@ -226,6 +277,11 @@ class Absen extends Component {
   };
 
   handleCheckboxChange = (e) => {
+    // Jika ada timer aktif, batalkan
+    if (this.state.timer) {
+      clearTimeout(this.state.timer);
+      this.setState({ timer: null });
+    }
     const isChecked = e.target.checked;
     this.setState({
       isPindahKlinik: isChecked ? 1 : 0,
@@ -234,6 +290,11 @@ class Absen extends Component {
   };
 
   handleCheckboxChangeShift = (e) => {
+    // Jika ada timer aktif, batalkan
+    if (this.state.timer) {
+      clearTimeout(this.state.timer);
+      this.setState({ timer: null });
+    }
     const isChecked = e.target.checked;
     this.setState({
       isLanjutShift: isChecked ? 1 : 0,
@@ -242,6 +303,11 @@ class Absen extends Component {
   };
 
   handleCheckboxChangeDokter = (e) => {
+    // Jika ada timer aktif, batalkan
+    if (this.state.timer) {
+      clearTimeout(this.state.timer);
+      this.setState({ timer: null });
+    }
     const { name, checked } = e.target;
     this.setState({ [name]: checked ? 1 : 0 });
   };
@@ -287,8 +353,8 @@ class Absen extends Component {
 
     return `${formattedHours}:${formattedMinutes}`;
   };
-  handleSubmit = async (e) => {
-    e.preventDefault();
+
+  handleSubmit = async () => {
     this.setState({ isProses: true, isLoad: true });
     const {
       barcode,
@@ -332,6 +398,7 @@ class Absen extends Component {
       this.setState({
         isProses: false,
         isLoad: false,
+        tanggal: "2024/10/25",
       });
       return true; // Jika semua kosong, return true
     }
@@ -340,6 +407,16 @@ class Absen extends Component {
     const tanggalHariIni = this.getTodayDate();
     let imageSrc = this.webcamRef.current.getScreenshot();
 
+    if (imageSrc == null) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Kamera Tidak Terdeteksi",
+      });
+      this.setState({ isProses: false, isLoad: false });
+
+      return;
+    }
     // Convert data URL to Blob
     const fotoKeluarBlob = this.dataURLToBlob(imageSrc);
 
@@ -359,7 +436,7 @@ class Absen extends Component {
         title: "Gagal",
         text: "Gagal mengkompres gambar",
       });
-      this.setState({ isProses: false });
+      this.setState({ isProses: false, isLoad: false });
 
       return;
     }
@@ -535,7 +612,6 @@ class Absen extends Component {
               await this.sendMessageToTelegram(message, thread, chatId);
             } else if (telatMenit > 29) {
               denda = (telatMenit - 29) * 1000 + 25000;
-              alert("disini");
               const message = `${this.state.namaPegawai} telat masuk selama ${telatMenit} menit, di ${this.state.cabang}`;
               await this.sendMessageToTelegram(message, thread, chatId);
             } else if (!idDetailJadwal) {
@@ -575,7 +651,7 @@ class Absen extends Component {
         is_pindah_klinik: isPindahKlinik,
         is_lanjut_shift: isLanjutShift,
         is_dokter_pengganti: isDokterPengganti,
-        nama_dokter_pengganti: dokterPengganti,
+        nama_dokter_pengganti: `${dokterPengganti} (${this.state.no_hp_pengganti})`,
         nama_petugas: this.state.namaPetugas,
         keterangan: "Masuk: " + this.state.keterangan,
         lokasiAbsen: this.state.namaKlinik,
@@ -613,6 +689,7 @@ class Absen extends Component {
               focusCancel: true,
             });
           }
+          this.getKehadiranPerawat(this.state.cabang);
           this.setState({
             selectedJadwal: {},
             idDetailJadwal: 0,
@@ -634,6 +711,7 @@ class Absen extends Component {
             isDokterPengganti: false,
             dokterPengganti: "",
             keterangan: "",
+            isSearch: false,
           });
         })
         .catch((error) => {
@@ -846,6 +924,55 @@ class Absen extends Component {
       return false;
     }
   }
+
+  getKehadiranPerawat = (cabang) => {
+    const postData = {
+      tanggal: this.state.tanggal,
+      jabatan: "Farmasi",
+      cabang: cabang,
+    };
+    console.log(postData);
+
+    axios
+      .post(urlAPI + "/jadwal/perawat-hadir/", postData)
+      .then((response) => {
+        const data = response.data;
+        if (data.length > 0) {
+          const nama = data[data.length - 1].nama
+            .split(" ")
+            .slice(0, 3)
+            .join(" ");
+          this.setState({ namaPetugas: nama, isPerawat: true });
+        } else {
+          this.getJadwalPerawat();
+        }
+
+        // Adding tanggal property to each data item
+        console.log("Data Hadir Perawat", response.data);
+      })
+      .catch((error) => {
+        console.log("Error:", error);
+      });
+  };
+
+  getJadwalPerawat = () => {
+    const postData = {
+      tanggal: this.state.tanggal,
+      jabatan: "Farmasi",
+    };
+    console.log(postData);
+
+    axios
+      .post(urlAPI + "/jadwal/jadwal-today/", postData)
+      .then((response) => {
+        // Adding tanggal property to each data item
+        this.setState({ dataPerawat: response.data });
+        console.log("Data", response.data);
+      })
+      .catch((error) => {
+        console.log("Error:", error);
+      });
+  };
   formatRupiah = (angka) => {
     var rupiah = "";
     var angkaRev = angka.toString().split("").reverse().join("");
@@ -858,6 +985,55 @@ class Absen extends Component {
         .reverse()
         .join("")
     );
+  };
+
+  handleInputChange = (e) => {
+    const value = e.target.value;
+
+    if (value.length === 5) {
+      this.setState({
+        barcode: value,
+        isComp: true,
+        errorMessage: "Klik Enter",
+      });
+    } else if (value.length === 4) {
+      this.setState({
+        barcode: value,
+        isComp: false,
+        errorMessage: "Karakter harus 5 karakter, awali Barcode dengan angka 0",
+      });
+    } else if (value.length > 5) {
+      this.setState({
+        barcode: value,
+        isComp: false,
+
+        errorMessage: "Salah, Karakter Melebihi 5 Karakter",
+      });
+    } else {
+      this.setState({
+        isComp: false,
+        barcode: value,
+        errorMessage: "Isi Barcode Kehadiran Anda",
+      });
+    }
+  };
+
+  handleKeyDown = (e) => {
+    // e.preventDefault();
+    if (e.key === "Enter" && this.state.barcode.length === 5) {
+      this.triggerFunction();
+    }
+  };
+
+  handleBlur = () => {
+    if (this.state.barcode.length === 5) {
+      this.triggerFunction();
+    }
+  };
+
+  triggerFunction = () => {
+    this.handleSearch();
+    this.setState({ isComp: false, errorMessage: "" });
   };
   render() {
     const optionCabang = [
@@ -874,7 +1050,7 @@ class Absen extends Component {
       { value: "GTSKemiling", text: "GTS Kemiling" },
       { value: "GTSTirtayasa", text: "GTS Tirtayasa" },
     ];
-    console.log("jadwal", this.state.dataJadwalHariIni);
+    console.log("petugas", this.state.namaPetugas);
     return (
       <div>
         <ToastContainer />
@@ -888,167 +1064,255 @@ class Absen extends Component {
           <>
             <div className="card-presensi">
               <div className="rounded-lg bg-white shadow-lg">
-                <div className="grid grid-cols-2">
-                  <div className="flex p-10 h-[70vh] justify-center items-center">
-                    <Webcam
-                      className="rounded-3xl"
-                      audio={false}
-                      ref={this.webcamRef}
-                      screenshotFormat="image/jpeg"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 overflow-hidden">
+                  {this.state.isSearch ? (
+                    <>
+                      <div className="flex p-10 h-[70vh] justify-center items-center relative">
+                        <Webcam
+                          className="rounded-3xl"
+                          audio={false}
+                          ref={this.webcamRef}
+                          screenshotFormat="image/jpeg"
+                        />
+                        <div className="w-full   px-[2.5rem] py-[7rem]  flex justify-center items-center absolute ">
+                          <img
+                            src={Face}
+                            className="w-full  z-[99] object-cover rounded-2xl"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-[85%] mr-10 h-[70vh] flex flex-col gap-6 justify-center items-center rounded-xl bg-slate-700">
+                        <h4 className="text-lg text-white font medium">
+                          Masukkan Barcode Untuk Akses Kamera
+                        </h4>
+                        <h4 className="text-lg text-white font medium text-center">
+                          Pastikan Anda Tidak Menggunakan Helm atau Masker Saat
+                          Absen
+                        </h4>
+                      </div>
+                    </>
+                  )}
                   <div className="flex flex-col justify-center">
-                    <h4 className="title">Presensi masuk</h4>
+                    <h4 className="title text-teal-500">Presensi masuk</h4>
                     <form action="">
                       <div className="flex flex-col gap-4 w-[60%]">
                         <div className="flex flex-row gap-3">
-                          <input
-                            type="number"
-                            placeholder="Masukkan barcode.."
-                            className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500"
-                            value={this.state.barcode}
-                            onChange={(e) => {
-                              this.setState({ barcode: e.target.value });
-                            }}
-                            required
-                          />
-                          <button
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
+                          <div className="flex flex-col gap-4 justify-start items-start w-full ">
+                            <input
+                              type="number"
+                              placeholder="Masukkan barcode.."
+                              className="mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500"
+                              value={this.state.barcode}
+                              onChange={this.handleInputChange}
+                              onKeyDown={this.handleKeyDown}
+                              onBlur={this.handleBlur}
+                              required
+                            />
+                            {this.state.errorMessage && (
+                              <p
+                                className={`${
+                                  this.state.isComp
+                                    ? "text-teal-600"
+                                    : "text-red-500"
+                                } text-base mt-1`}
+                              >
+                                {this.state.errorMessage}
+                              </p>
+                            )}
+                          </div>
+                          {/* <button
+                            className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 focus:outline-none focus:bg-teal-600"
                             onClick={this.handleSearch}
                           >
                             <FiSearch />
-                          </button>
+                          </button> */}
                         </div>
-                        <div className="relative">
-                          <select
-                            className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                            value={this.state.idDetailJadwal}
-                            onChange={(e) => {
-                              const selectedData =
-                                this.state.dataJadwalHariIni.find(
-                                  (data) => data.id === parseInt(e.target.value)
-                                );
-                              const selectedIdJadwal = selectedData.id_jadwal;
-                              const selectedIdShift = selectedData.id_shift;
-                              const selectedHarusMasuk = konfersiJam(
-                                selectedData.jam_masuk
-                              );
-                              this.setState({
-                                selectedJadwal: selectedData,
-                                idDetailJadwal: e.target.value,
-                                idJadwal: selectedIdJadwal,
-                                idShift: selectedIdShift,
-                                harusMasuk: selectedHarusMasuk,
-                              });
-                            }}
-                          >
-                            <option>Pilih Jadwal Anda</option>
-                            {this.state.dataJadwalHariIni.map((data) => (
-                              <option value={data.id}>{data.nama_shift}</option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* <div className="relative">
-                      <select
-                        className="block hover:cursor-pointer appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                        onChange={(e) => {
-                          this.setState({ cabang: e.target.value });
-                        }}
-                      >
-                        <option>Pilih Cabang Anda</option>
-                        {optionCabang.map((data) => (
-                          <option value={data.value}>{data.text}</option>
-                        ))}
-                      </select>
-                    </div> */}
-                        <div className="flex flex-rows gap-3">
-                          <div className="flex items-center">
+                        {this.state.isSearch ? (
+                          <>
+                            <div className="relative">
+                              <select
+                                className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                value={this.state.idDetailJadwal}
+                                onChange={(e) => {
+                                  const selectedData =
+                                    this.state.dataJadwalHariIni.find(
+                                      (data) =>
+                                        data.id === parseInt(e.target.value)
+                                    );
+                                  const selectedIdJadwal =
+                                    selectedData.id_jadwal;
+                                  const selectedIdShift = selectedData.id_shift;
+                                  const selectedHarusMasuk = konfersiJam(
+                                    selectedData.jam_masuk
+                                  );
+                                  // Jika ada timer aktif, batalkan
+                                  if (this.state.timer) {
+                                    clearTimeout(this.state.timer);
+                                    this.setState({ timer: null });
+                                  }
+                                  this.setState({
+                                    selectedJadwal: selectedData,
+                                    idDetailJadwal: e.target.value,
+                                    idJadwal: selectedIdJadwal,
+                                    idShift: selectedIdShift,
+                                    harusMasuk: selectedHarusMasuk,
+                                  });
+                                }}
+                              >
+                                <option>Pilih Jadwal Anda</option>
+                                {this.state.dataJadwalHariIni.map((data) => (
+                                  <option value={data.id}>
+                                    {data.nama_shift}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="flex flex-rows gap-3">
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id="checkbox"
+                                  name="checkbox"
+                                  checked={this.state.isPindahKlinik === 1}
+                                  onChange={this.handleCheckboxChange}
+                                  className="form-checkbox h-5 w-5 text-teal-600"
+                                />
+                                <label
+                                  htmlFor="checkbox"
+                                  className="ml-2 text-gray-700"
+                                >
+                                  Saya pindah klinik
+                                </label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id="checkboxShift"
+                                  name="checkboxShift"
+                                  checked={this.state.isLanjutShift === 1}
+                                  onChange={this.handleCheckboxChangeShift}
+                                  className="form-checkbox h-5 w-5 text-teal-600"
+                                />
+                                <label
+                                  htmlFor="checkbox"
+                                  className="ml-2 text-gray-700"
+                                >
+                                  Saya lanjut shift
+                                </label>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="checkboxPengganti"
+                                name="isDokterPengganti"
+                                checked={this.state.isDokterPengganti === 1}
+                                onChange={this.handleCheckboxChangeDokter}
+                                className="form-checkbox h-5 w-5 text-teal-600"
+                              />
+                              <label className="ml-2 text-gray-700">
+                                Saya Pengganti Dari Luar Klinik
+                              </label>
+                            </div>
                             <input
-                              type="checkbox"
-                              id="checkbox"
-                              name="checkbox"
-                              checked={this.state.isPindahKlinik === 1}
-                              onChange={this.handleCheckboxChange}
-                              className="form-checkbox h-5 w-5 text-blue-600"
+                              type="text"
+                              placeholder="Nama dokter pengganti - no hp"
+                              className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500 ${
+                                this.state.isDokterPengganti === 1
+                                  ? ""
+                                  : "hidden"
+                              }`}
+                              value={this.state.dokterPengganti}
+                              onChange={(e) => {
+                                this.setState({
+                                  dokterPengganti: e.target.value,
+                                });
+                              }}
+                              required
                             />
-                            <label
-                              htmlFor="checkbox"
-                              className="ml-2 text-gray-700"
-                            >
-                              Saya pindah klinik
-                            </label>
-                          </div>
-                          <div className="flex items-center">
                             <input
-                              type="checkbox"
-                              id="checkboxShift"
-                              name="checkboxShift"
-                              checked={this.state.isLanjutShift === 1}
-                              onChange={this.handleCheckboxChangeShift}
-                              className="form-checkbox h-5 w-5 text-blue-600"
+                              type="text"
+                              placeholder="No hp Dokter Pengganti"
+                              className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500 ${
+                                this.state.isDokterPengganti === 1
+                                  ? ""
+                                  : "hidden"
+                              }`}
+                              value={this.state.no_hp_pengganti}
+                              onChange={(e) => {
+                                this.setState({
+                                  no_hp_pengganti: e.target.value,
+                                });
+                              }}
+                              required
                             />
-                            <label
-                              htmlFor="checkbox"
-                              className="ml-2 text-gray-700"
-                            >
-                              Saya lanjut shift
-                            </label>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="checkboxPengganti"
-                            name="isDokterPengganti"
-                            checked={this.state.isDokterPengganti === 1}
-                            onChange={this.handleCheckboxChangeDokter}
-                            className="form-checkbox h-5 w-5 text-blue-600"
-                          />
-                          <label className="ml-2 text-gray-700">
-                            Saya Pengganti Dari Luar Klinik
-                          </label>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Nama dokter pengganti - no hp"
-                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 ${
-                            this.state.isDokterPengganti === 1 ? "" : "hidden"
-                          }`}
-                          value={this.state.dokterPengganti}
-                          onChange={(e) => {
-                            this.setState({ dokterPengganti: e.target.value });
-                          }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Nama Petugas PO"
-                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
-                          value={this.state.namaPetugas}
-                          onChange={(e) => {
-                            this.setState({ namaPetugas: e.target.value });
-                          }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Keterangan"
-                          className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-blue-500 `}
-                          value={this.state.keterangan}
-                          onChange={(e) => {
-                            this.setState({ keterangan: e.target.value });
-                          }}
-                        />
-                        <div className="flex flex-row gap-4">
-                          <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
-                            onClick={this.handleSubmit}
-                            disabled={this.state.isProses}
-                          >
-                            Hadir
-                          </button>
-                        </div>
+                            <input
+                              type="text"
+                              placeholder="Keterangan"
+                              className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500 `}
+                              value={this.state.keterangan}
+                              onChange={(e) => {
+                                // Jika ada timer aktif, batalkan
+                                if (this.state.timer) {
+                                  clearTimeout(this.state.timer);
+                                  this.setState({ timer: null });
+                                }
+                                this.setState({ keterangan: e.target.value });
+                              }}
+                            />
+                            {this.state.isPerawat ? (
+                              <>
+                                <input
+                                  type="text"
+                                  placeholder="Nama Petugas PO"
+                                  className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500 `}
+                                  value={this.state.namaPetugas}
+                                  readOnly
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <select
+                                  className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                  value={this.state.namaPetugas}
+                                  onChange={(e) => {
+                                    // Jika ada timer aktif, batalkan
+                                    if (this.state.timer) {
+                                      clearTimeout(this.state.timer);
+                                      this.setState({ timer: null });
+                                    }
+                                    this.setState({
+                                      namaPetugas: e.target.value,
+                                    });
+                                  }}
+                                >
+                                  <option>Pilih Petugas PO</option>
+                                  {this.state.dataPerawat.map((data) => (
+                                    <option value={data.nama}>
+                                      {data.nama}
+                                    </option>
+                                  ))}
+                                </select>
+                              </>
+                            )}
+
+                            <div className="flex flex-row gap-4">
+                              <button
+                                className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 focus:outline-none focus:bg-teal-600"
+                                onClick={this.handleSubmit}
+                                disabled={this.state.isProses}
+                              >
+                                Hadir
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <></>
+                        )}
                       </div>
                     </form>
                   </div>
