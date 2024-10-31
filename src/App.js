@@ -42,6 +42,7 @@ import LoginMobile from "./pages/mobile/Login";
 import TodayJadwal from "./pages/TodayJadwal";
 import Navbar from "./components/navbar";
 import TodayJadwalMobile from "./pages/mobile/JadwalToday";
+import RekapKehadiranTerapis from "./pages/rekapKehadiran/RekapTerapis";
 
 function App() {
   const isLoggedIn = sessionStorage.getItem("user");
@@ -159,6 +160,10 @@ function App() {
                       <Route
                         path="/rekap-kehadiran-dokter"
                         element={<RekapKehadiranDokter />}
+                      />
+                      <Route
+                        path="/rekap-kehadiran-terapis"
+                        element={<RekapKehadiranTerapis />}
                       />
                       <Route
                         path="/rekap-kehadiran-dokter-gigi"

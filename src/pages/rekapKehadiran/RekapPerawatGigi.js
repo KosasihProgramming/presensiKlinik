@@ -230,22 +230,38 @@ class RekapKehadiranPerawatGigi extends Component {
       // Menggabungkan semua objek dalam detailSales menjadi satu array
       const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
 
-      const cleanedData = allDetailSales.map((item) => ({
-        ...item,
-        formula: item.formula.replace("v.ProductQuantity*", ""), // Menghapus kata "Tahun"
-      }));
-      // Mengelompokkan berdasarkan productid dan menghitung jumlahnya
+
+      const cleanedData = allDetailSales.map((item) => {
+        // Menerjemahkan formula ke operasi perhitungan angka
+        let formula = item.formula
+          .replace(/v\.ProductSalesPrice/g, item.price)
+          .replace(/v\.ProductQuantity/g, item.salesqty);
+
+        // Mengevaluasi formula menjadi angka
+        let evaluatedFormula;
+        try {
+          evaluatedFormula = eval(formula); // Hasil dari perhitungan formula
+        } catch (error) {
+          evaluatedFormula = 0; // Jika terjadi kesalahan evaluasi, berikan nilai default
+          console.error("Error evaluating formula:", error);
+        }
+
+        return {
+          ...item,
+          rumus: evaluatedFormula, // Menyimpan hasil evaluasi formula
+        };
+      });
+
       // Mengelompokkan berdasarkan productid dan menghitung jumlahnya serta menjumlahkan nilai lainnya
       const groupedByProductId = cleanedData.reduce((acc, item) => {
         // Jika productid belum ada di accumulator, inisialisasi
         if (!acc[item.productid]) {
           acc[item.productid] = {
             productid: item.productid,
-            formula: item.formula,
             nama: item.name,
             count: 0,
-            cost: item.costprice,
-            price: item.price,
+            cost: parseInt(item.costprice),
+            price: parseInt(item.price),
             totalCost: 0,
             totalPrice: 0,
             totalLaba: 0,
@@ -256,14 +272,17 @@ class RekapKehadiranPerawatGigi extends Component {
         // Menambahkan jumlah kemunculan
         acc[item.productid].count += 1;
 
-        // Menambahkan total grossamount, netamount, dan price
-        acc[item.productid].totalCost += item.costprice * item.salesqty;
-        acc[item.productid].totalPrice += item.price * item.salesqty;
+        // Menambahkan total cost, price, laba, dan komisi
+        acc[item.productid].totalCost +=
+          parseInt(item.costprice) * parseInt(item.salesqty);
+        acc[item.productid].totalPrice +=
+          parseInt(item.price) * parseInt(item.salesqty);
         acc[item.productid].totalLaba += Math.abs(
-          item.price * item.salesqty - item.costprice * item.salesqty
+          parseInt(item.price) * parseInt(item.salesqty) -
+            parseInt(item.costprice) * parseInt(item.salesqty)
         );
-        acc[item.productid].totalKomisi +=
-          parseInt(item.formula) * item.salesqty;
+        acc[item.productid].totalKomisi += item.rumus; // Menggunakan hasil perhitungan formula
+
         return acc;
       }, {});
 

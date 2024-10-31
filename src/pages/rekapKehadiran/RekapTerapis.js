@@ -6,8 +6,8 @@ import MUIDataTable from "mui-datatables";
 import { Form } from "react-bootstrap";
 import "../../style/jadwal.css";
 import { urlAPI } from "../../config/global";
-import Swal from "sweetalert2";
 import Loader from "../../function/loader";
+import Swal from "sweetalert2";
 
 const months = [
   { value: "Januari", label: "Januari" },
@@ -40,22 +40,24 @@ const formatCurrency = (number) => {
   }).format(number);
 };
 
-class RekapKehadiranPerawat extends Component {
+class RekapKehadiranTerapis extends Component {
   constructor(props) {
     super(props);
     this.state = {
       isProses: false,
       judul: [],
       judul2: [],
-      isLoad: false,
       dataExport2: [],
       dataExport: [],
       bulan: null,
+      cabang: "",
+      charLoad: "Sedang Memuat Data...",
+      isLoad: false,
       tahun: new Date().getFullYear(),
       rekapKehadiran: [],
-      charLoad: "Sedang Memuat Data...",
       namaKlinik: "",
-      cabang: "",
+      dataGanti: [],
+      footer: [],
     };
   }
 
@@ -63,22 +65,13 @@ class RekapKehadiranPerawat extends Component {
     // this.getKlinik();
   }
 
-  getKlinik = async () => {
-    try {
-      const response = await axios.get(`${urlAPI}/klinik`);
-      this.setState({ namaKlinik: response.data[0].nama_instansi });
-    } catch (error) {
-      console.error("Error fetching API", error);
-    }
-  };
   getData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
     this.setState({ charLoad: "Sedang Mengambil data.." });
-
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get`,
+        `${urlAPI}/rekap-kehadiran-terapis/get`,
         arg,
         {
           headers: {
@@ -93,12 +86,11 @@ class RekapKehadiranPerawat extends Component {
 
   deleteData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
-    const arg = { bulan, tahun, cabang };
     this.setState({ charLoad: "Sedang Menghapus Data Lama..." });
-
+    const arg = { bulan, tahun, cabang };
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/delete`,
+        `${urlAPI}/rekap-kehadiran-terapis/delete`,
         arg,
         {
           headers: {
@@ -115,11 +107,23 @@ class RekapKehadiranPerawat extends Component {
   ambilData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
-    this.setState({ charLoad: "Sedang mengambil data..." });
+
+    const loadingMessages = [
+      "Sabar hehe...",
+      "Sedang mengambil data...",
+      "Data hampir selesai...",
+      "Harap tunggu sebentar...",
+    ];
+
+    let messageIndex = 0;
+    const intervalId = setInterval(() => {
+      this.setState({ charLoad: loadingMessages[messageIndex] });
+      messageIndex = (messageIndex + 1) % loadingMessages.length;
+    }, 10000); // interval 10 detik
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-terapis/cek`,
         arg,
         {
           headers: {
@@ -127,9 +131,21 @@ class RekapKehadiranPerawat extends Component {
           },
         }
       );
-      this.setState({ rekapKehadiran: response.data });
+
+      // Hentikan interval setelah permintaan selesai
+      clearInterval(intervalId);
+
+      // Setel status setelah data berhasil diambil
+      this.setState({ charLoad: "Sedang mengambil data..." });
+
+      // Panggil fungsi untuk memformat data CSV
       this.formatCSVData(response.data);
     } catch (error) {
+      // Hentikan interval jika ada error
+      clearInterval(intervalId);
+
+      // Setel status error
+      this.setState({ charLoad: "Error dalam mengambil data" });
       console.log("Error pada tanggal:", error);
     }
   };
@@ -137,11 +153,9 @@ class RekapKehadiranPerawat extends Component {
   cekData = async (bulan, tahun) => {
     const cabang = this.state.cabang;
     const arg = { bulan, tahun, cabang };
-    this.setState({ charLoad: "Sedang Memeriksa Data..." });
-
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/cek`,
+        `${urlAPI}/rekap-kehadiran-terapis/cek`,
         arg,
         {
           headers: {
@@ -150,6 +164,8 @@ class RekapKehadiranPerawat extends Component {
         }
       );
 
+      this.setState({ charLoad: "Sedang Memeriksa Data..." });
+      console.log(response.data);
       if (response.data.length > 0) {
         await this.deleteData(bulan, tahun);
         await this.getData(bulan, tahun);
@@ -162,15 +178,13 @@ class RekapKehadiranPerawat extends Component {
       console.log("Error pada tanggal:", error);
     }
   };
-
   getDataKomisi = async (tanggal, barcode) => {
     const cabang = this.state.cabang;
-
     const arg = { tanggal: tanggal, barcode: barcode, cabang: cabang };
 
     try {
       const response = await axios.post(
-        `${urlAPI}/rekap-kehadiran-perawat/get-insentif`,
+        `${urlAPI}/rekap-kehadiran-terapis/get-insentif`,
         arg,
         {
           headers: {
@@ -182,19 +196,20 @@ class RekapKehadiranPerawat extends Component {
       const sales = response.data;
       const data = sales.forEach((sale) => {
         const totalGrossAmount = sale.salesdetail.reduce(
-          (total, detail) => total + detail.grossamount,
+          (total, detail) => total + parseInt(detail.grossamount),
           0
         );
         const totalNetAmount = sale.salesdetail.reduce(
-          (total, detail) => total + detail.netamount,
+          (total, detail) => total + parseInt(detail.netamount),
           0
         );
         const totalPrice = sale.salesdetail.reduce(
-          (total, detail) => total + detail.price,
+          (total, detail) => total + parseInt(detail.price),
           0
         );
         const cost = sale.salesdetail.reduce(
-          (total, detail) => total + detail.price - detail.costprice,
+          (total, detail) =>
+            total + parseInt(detail.price) - parseInt(detail.costprice),
           0
         );
         // Menambahkan total ke dalam properti baru pada objek sales
@@ -216,11 +231,11 @@ class RekapKehadiranPerawat extends Component {
         };
       });
       const totalGrossAmount = dataFilter.reduce(
-        (total, detail) => total + detail.gross,
+        (total, detail) => total + parseInt(detail.gross),
         0
       );
       const totalNetAmount = dataFilter.reduce(
-        (total, detail) => total + detail.net,
+        (total, detail) => total + parseInt(detail.net),
         0
       );
 
@@ -230,7 +245,6 @@ class RekapKehadiranPerawat extends Component {
       // Menggabungkan semua objek dalam detailSales menjadi satu array
       const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
 
-  
       const cleanedData = allDetailSales.map((item) => {
         // Menerjemahkan formula ke operasi perhitungan angka
         let formula = item.formula
@@ -286,44 +300,69 @@ class RekapKehadiranPerawat extends Component {
         return acc;
       }, {});
 
+      console.log(groupedByProductId);
+
       // Mengonversi hasil menjadi array
       const result = Object.values(groupedByProductId);
       const sortedResult = result.sort((a, b) =>
         a.productid.localeCompare(b.productid)
       );
-      const resultFilter = sortedResult.filter(
-        (a) => !a.nama.includes("PERIKSA DOKTER")
-      );
-
       const totalPrice = dataFilter.reduce(
-        (total, detail) => total + detail.net,
+        (total, detail) => total + parseInt(detail.net),
         0
       );
-      const totalCost = resultFilter.reduce(
-        (total, detail) => total + Math.round(detail.totalLaba, 4),
+      const totalCost = result.reduce(
+        (total, detail) => total + Math.round(parseInt(detail.totalLaba), 4),
         0
       );
-      const komisi = resultFilter.reduce(
-        (total, detail) => total + Math.round(detail.totalKomisi, 4),
+      const komisi = result.reduce(
+        (total, detail) => total + Math.round(parseInt(detail.totalKomisi), 4),
         0
       );
-      console.log(resultFilter);
+      console.log(sortedResult);
       console.log("total gross", totalGrossAmount);
       console.log("total net", totalNetAmount);
       console.log("total Price", totalPrice);
       console.log("total Cost", totalCost);
       console.log("total Commision", komisi);
-      console.log(sales);
+      console.log(cleanedData);
       console.log(allDetailSales);
       return komisi;
     } catch (error) {
       console.log("Error pada tanggal:", error);
     }
   };
+  getKomisiByTanggal = async (tanggal) => {
+    // Array salesIds dengan properti name dan code
+    const salesIds = [
+      { name: "Dokter Pengganti Gigi (P)", code: "DPG001" },
+      { name: "Dokter Pengganti Gigi (S)", code: "DPG002" },
+      { name: "Dokter Pengganti Gigi (M)", code: "DPG003" },
+      { name: "Dokter Pengganti Umum (P)", code: "DPU001" },
+      { name: "Dokter Pengganti Umum (S)", code: "DPU002" },
+      { name: "Dokter Pengganti Umum (M)", code: "DPU003" },
+    ];
+
+    // Array untuk menyimpan hasil yang memiliki komisi > 0
+    const result = [];
+
+    // Loop melalui setiap ID dan hitung komisi
+    for (const sales of salesIds) {
+      const komisi = await this.getDataKomisi(tanggal, sales.code); // Panggil fungsi dengan tanggal dan salesId
+
+      // Jika komisi lebih dari 0, tambahkan ke hasil
+      if (komisi > 0) {
+        result.push({ nama_dokter: sales.name, totalKomisi: komisi, tanggal }); // Tambahkan tanggal
+      }
+    }
+
+    // Kembalikan array objek yang berisi data komisi lebih dari 0
+    return result;
+  };
+
   handleSearch = (e) => {
     e.preventDefault();
     this.setState({ isProses: true, isLoad: true });
-
     const { bulan, tahun } = this.state;
     console.log(bulan, tahun);
     this.cekData(bulan, tahun);
@@ -338,137 +377,73 @@ class RekapKehadiranPerawat extends Component {
     // Gunakan Promise.all untuk menangani operasi asynchronous
     const updatedData = await Promise.all(
       sortedData.map(async (item) => {
-        const komisi = await this.getDataKomisi(
-          item.tanggal,
-          item.servicedoerid
-        ); // Tunggu hasil getDataKomisi
+        const komisi = await this.getDataKomisi(item.tanggal, item.salesmanid); // Tunggu hasil getDataKomisi
         return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
       })
     );
-    this.setState({ charLoad: "Bentarr Lagi..." });
 
     console.log(updatedData, "sort");
+    this.setState({ charLoad: "hehe..." });
 
-    const dataPengganti = sortedData.filter((a) => a.nama_pengganti !== "");
+    const dataPengganti = updatedData.filter(
+      (a) => a.nama_dokter_pengganti !== ""
+    );
+
+    this.setState({ charLoad: "Bentarr Lagi..." });
 
     const dataArrayString = updatedData.map((obj, index) => {
       return [
         index + 1,
         this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
+        obj.nama_terapis,
         obj.nama_shift,
         obj.jam_masuk,
-        obj.jam_keluar,
+        obj.jam_pulang,
         obj.telat,
         obj.denda_telat,
         obj.pulang_cepat,
         obj.denda_pulang_cepat,
-        obj.total_jam,
-        0,
+        obj.nominal_shift,
         obj.komisi,
-        0,
-        obj.nama_petugas,
+        parseInt(obj.nominal_shift) - parseInt(obj.denda_telat),
         obj.keterangan,
-      ];
-    });
-
-    const dataArrayPengganti = dataPengganti.map((obj, index) => {
-      return [
-        index + 1,
-        this.formatTanggal(obj.tanggal),
-        obj.nama_perawat,
-        obj.nama_pengganti,
-        obj.nama_shift,
-        obj.total_jam,
-        obj.jam_masuk,
-        obj.jam_keluar,
-        0,
-        obj.komisi,
-        obj.telat,
-        obj.denda_telat,
-        obj.pulang_cepat,
-        obj.denda_pulang_cepat,
-        0,
         obj.nama_petugas,
       ];
     });
 
     const propertyNames = [
-      ["Rekap Kehadiran Staff Perawat " + this.state.namaKlinik],
+      ["Rekap Kehadiran Staff Terapis " + this.state.namaKlinik],
       [""],
       [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
       [""],
       [
         "No",
         "Tanggal",
-        "Nama Perawat",
+        "Nama Terapis",
         "Nama Shift",
         "Jam Masuk",
-        "jam Pulang",
+        "Jam Pulang",
         "Telat (Menit)",
         "Denda Telat",
-        "Pulang Cepat (Menit)",
+        "Pulang Cepat",
         "Denda Pulang Cepat",
-        "Total Jam Shift",
         "Nominal Kehadiran",
         "Nominal Komisi",
         "Total Nominal Kehadiran",
-        "Nama Petugas",
         "Keterangan",
+        "Nama Petugas",
       ],
     ];
-    const propertyNames2 = [
-      ["Rekap Kehadiran Staff Perawat Pengganti " + this.state.namaKlinik],
-      [""],
-      [`PERIODE  : ${this.state.bulan} ${this.state.tahun}`],
-      [""],
-      [
-        "No",
-        "Tanggal",
-        "Nama Perawat",
-        "",
-        "Nama Shift",
-        "Total Jam Shift",
 
-        "Jam",
-        "",
-        "Pot. Kehadiran",
-        "",
-        "",
-        "",
-        "Gaji",
-        "",
-        "Total",
-        "Petugas",
-        "",
-      ],
-      [
-        "",
-        "",
-        "Perawat Tetap",
-        "Perawat Pengganti",
-        "",
-        "Jam Masuk",
-        "Jam Pulang",
-        "Durasi Telat",
-        "Denda",
-        "Durasi Pulang Cepat",
-        "Denda",
-        "Uang Duduk",
-        "Uang Insentif",
-        "",
-        "Nama",
-        "Paraf",
-      ],
-    ];
+    this.setState({ rekapKehadiran: data });
 
     // Set data ke state
     this.setState({
       isLoad: false,
       judul: propertyNames,
-      judul2: propertyNames2,
+
       dataExport: dataArrayString,
-      dataExport2: dataArrayPengganti,
+      charLoad: "Sedang Memuat Data...",
     });
   };
 
@@ -495,14 +470,7 @@ class RekapKehadiranPerawat extends Component {
     const csvContent = this.convertToCSV([...judul, ...dataExport]);
     this.downloadCSV(
       csvContent,
-      `Data Rekap Kehadiran Perawat ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
-    );
-    const { dataExport2, judul2 } = this.state;
-    // Flatten the array for csv
-    const csvContent2 = this.convertToCSV([...judul2, ...dataExport2]);
-    this.downloadCSV(
-      csvContent2,
-      `Data Rekap Kehadiran Perawat Pengganti ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
+      `Data Rekap Kehadiran Terapis ${this.state.bulan} ${this.state.tahun} ${this.state.namaKlinik}.csv`
     );
   };
   formatTanggal = (tanggal) => {
@@ -523,7 +491,6 @@ class RekapKehadiranPerawat extends Component {
     const formattedJam1 = formatTime(jam);
     return formattedJam1;
   };
-
   showAlert = (url) => {
     Swal.fire({
       title: "Foto ",
@@ -544,7 +511,7 @@ class RekapKehadiranPerawat extends Component {
 
     const dataTabel = rekapKehadiran.map((item) => [
       item.tanggal,
-      item.nama_perawat,
+      item.nama_terapis,
       item.nama_shift,
       item.telat ? (
         <div className="rounded bg-red-500 p-1 text-white">{`${item.telat} Menit`}</div>
@@ -598,7 +565,7 @@ class RekapKehadiranPerawat extends Component {
 
     const columnsData = [
       "Tanggal",
-      "Nama Perawat",
+      "Nama Dokter",
       "Nama Shift",
       "Telat",
       "Masuk",
@@ -613,6 +580,7 @@ class RekapKehadiranPerawat extends Component {
       rowsPerPageOption: [5, 10],
       filterDate: new Date().toLocaleDateString(),
     };
+
     const optionCabang = [
       { value: "Kemiling", text: "Klinik Kosasih Kemiling" },
       { value: "Rajabasa", text: "Klinik Kosasih Rajabasa" },
@@ -644,7 +612,7 @@ class RekapKehadiranPerawat extends Component {
               <div className="rounded-lg bg-white shadow-lg my-5">
                 <div className="flex flex-col p-10">
                   <h4 className="text-black font-bold text-xl">
-                    Cari Rekapan per periode - Perawat Umum
+                    Cari Rekapan per periode
                   </h4>
                   <br />
                   <hr />
@@ -678,9 +646,7 @@ class RekapKehadiranPerawat extends Component {
                         </Form.Group>
 
                         <Form.Group className="form-field">
-                          <Form.Label className="label-text">
-                            Pilih Bulan:
-                          </Form.Label>
+                          <Form.Label className="label-text">Bulan:</Form.Label>
 
                           <select
                             className="bulan-field"
@@ -698,11 +664,8 @@ class RekapKehadiranPerawat extends Component {
                             ))}
                           </select>
                         </Form.Group>
-
                         <Form.Group className="form-field">
-                          <Form.Label className="label-text">
-                            Pilih Tahun:
-                          </Form.Label>
+                          <Form.Label className="label-text">Tahun:</Form.Label>
 
                           <select
                             className="bulan-field"
@@ -803,7 +766,7 @@ class RekapKehadiranPerawat extends Component {
                     <h2>Memproses...</h2>
                   ) : (
                     <MUIDataTable
-                      title={"Data Rekap Perawat"}
+                      title={"Data Rekap Dokter Umum"}
                       data={dataTabel}
                       columns={columnsData}
                       options={options}
@@ -819,4 +782,4 @@ class RekapKehadiranPerawat extends Component {
   }
 }
 
-export default RekapKehadiranPerawat;
+export default RekapKehadiranTerapis;
