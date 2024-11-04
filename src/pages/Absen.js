@@ -398,8 +398,28 @@ class Absen extends Component {
       this.setState({
         isProses: false,
         isLoad: false,
-        tanggal: "2024/10/25",
+        // tanggal: "2024/10/25",
       });
+
+      return true; // Jika semua kosong, return true
+    }
+
+    if (
+      (this.state.isDokterPengganti == 1 &&
+        this.state.dokterPengganti === "") ||
+      this.state.no_hp_pengganti == ""
+    ) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Harap Lengkapi Data Dokter Pengganti",
+      });
+      this.setState({
+        isProses: false,
+        isLoad: false,
+        // tanggal: "2024/10/25",
+      });
+
       return true; // Jika semua kosong, return true
     }
 
@@ -651,7 +671,10 @@ class Absen extends Component {
         is_pindah_klinik: isPindahKlinik,
         is_lanjut_shift: isLanjutShift,
         is_dokter_pengganti: isDokterPengganti,
-        nama_dokter_pengganti: `${dokterPengganti} (${this.state.no_hp_pengganti})`,
+        nama_dokter_pengganti:
+          isDokterPengganti == 1
+            ? `${dokterPengganti} (${this.state.no_hp_pengganti})`
+            : "",
         nama_petugas: this.state.namaPetugas,
         keterangan: "Masuk: " + this.state.keterangan,
         lokasiAbsen: this.state.namaKlinik,
@@ -706,9 +729,9 @@ class Absen extends Component {
           this.setState({
             isProses: false,
             isLoad: false,
-            isPindahKlinik: false,
-            isLanjutShift: false,
-            isDokterPengganti: false,
+            isPindahKlinik: 0,
+            isLanjutShift: 0,
+            isDokterPengganti: 0,
             dokterPengganti: "",
             keterangan: "",
             isSearch: false,

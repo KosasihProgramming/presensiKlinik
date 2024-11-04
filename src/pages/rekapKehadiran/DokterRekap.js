@@ -244,7 +244,6 @@ class RekapKehadiranDokter extends Component {
       // Menggabungkan semua objek dalam detailSales menjadi satu array
       const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
 
-
       const cleanedData = allDetailSales.map((item) => {
         // Menerjemahkan formula ke operasi perhitungan angka
         let formula = item.formula
@@ -383,7 +382,7 @@ class RekapKehadiranDokter extends Component {
     this.setState({ charLoad: "hehe..." });
 
     const dataPengganti = updatedData.filter(
-      (a) => a.nama_dokter_pengganti !== ""
+      (a) => a.nama_dokter_pengganti !== "" && a.nama_dokter_pengganti !== " ()"
     );
 
     // Variabel untuk menyimpan hasil dari semua tanggal
