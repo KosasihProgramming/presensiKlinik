@@ -635,7 +635,7 @@ class Absen extends Component {
       if (diganti == 1) {
         const id = "-1001859405516";
         const topic = "14";
-        const message = `<b>dr. Tetap</b>: ${this.state.namaPegawai}\n<b>Digantikan oleh</b> :${namaDokterPengganti}\n<b>Pada Tanggal : ${tanggalHariIni}</b>\n<b>Waktu Shift</b> :${dataJadwalHariIni[0].jam_masuk} : ${dataJadwalHariIni[0].jam_pulang}\n<b>Petugas Penjaga</b> : ${this.state.namaPetugas}\n<b>Lokasi Klinik</b> : ${namaKlinik}`;
+        const message = `<b>dr. Tetap</b>: ${this.state.namaPegawai}\n<b>Nama Pengganti</b> :${namaDokterPengganti}\n<b>No HP Pengganti</b> :${this.state.no_hp_pengganti}\n<b>Pada Tanggal : ${tanggalHariIni}</b>\n<b>Waktu Shift</b> :${dataJadwalHariIni[0].jam_masuk} : ${dataJadwalHariIni[0].jam_pulang}\n<b>Petugas Penjaga</b> : ${this.state.namaPetugas}\n<b>Lokasi Klinik</b> : ${this.state.cabang}`;
         await this.sendMessageToTelegram(message, topic, id);
       }
 
