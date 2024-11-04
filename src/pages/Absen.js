@@ -405,9 +405,8 @@ class Absen extends Component {
     }
 
     if (
-      (this.state.isDokterPengganti == 1 &&
-        this.state.dokterPengganti === "") ||
-      this.state.no_hp_pengganti == ""
+      this.state.isDokterPengganti == 1 &&
+      (this.state.dokterPengganti === "" || this.state.no_hp_pengganti == "")
     ) {
       Swal.fire({
         icon: "error",
