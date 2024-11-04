@@ -247,6 +247,10 @@ function App() {
                         element={<RekapKehadiranDokterGigi />}
                       />
                       <Route
+                        path="/rekap-kehadiran-terapis"
+                        element={<RekapKehadiranTerapis />}
+                      />
+                      <Route
                         path="/rekap-kehadiran-perawat"
                         element={<RekapKehadiranPerawat />}
                       />
