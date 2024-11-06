@@ -1154,6 +1154,13 @@ class Absen extends Component {
                         </div>
                         {this.state.isSearch ? (
                           <>
+                            <input
+                              type="text"
+                              placeholder="Nama dokter pengganti - no hp"
+                              className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500`}
+                              value={this.state.selectedJadwal.nama}
+                              readOnly
+                            />
                             <div className="relative">
                               <select
                                 className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
