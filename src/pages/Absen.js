@@ -1157,7 +1157,7 @@ class Absen extends Component {
                             <input
                               type="text"
                               placeholder="Nama dokter pengganti - no hp"
-                              className={`mt-1 p-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500`}
+                              className={`mt-1 p-2 text-xl border border-gray-300 rounded-md w-full focus:outline-none focus:ring focus:border-teal-500`}
                               value={this.state.selectedJadwal.nama}
                               readOnly
                             />
