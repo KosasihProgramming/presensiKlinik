@@ -175,8 +175,20 @@ class Absen extends Component {
 
             // Mendapatkan waktu saat ini dalam format yang sama
             const now = new Date();
+            const timeZone = "Asia/Jakarta";
+            const options = {
+              timeZone,
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            };
+            const formatter = new Intl.DateTimeFormat("en-GB", options);
+            const formattedTime = formatter.format(now); // Misalnya: 14:35:20
+
+            // Membuat waktu dalam format yang sama dengan zona waktu
             const currentTime = new Date(
-              `1970-01-01T${now.toTimeString().split(" ")[0]}Z`
+              `1970-01-01T${formattedTime}Z`
             ).getTime();
 
             // Mencari objek dengan jam_masuk terdekat dengan waktu saat ini
@@ -343,15 +355,26 @@ class Absen extends Component {
     }
   };
   getCurrentTime = () => {
+    const timeZone = "Asia/Jakarta";
     const now = new Date();
-    const hours = now.getHours(); // Mengambil jam saat ini
-    const minutes = now.getMinutes(); // Mengambil menit saat ini
+    const options = {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    };
+    const formatter = new Intl.DateTimeFormat("en-GB", options);
+    const parts = formatter.formatToParts(now);
+
+    let hours = parts.find((p) => p.type === "hour").value;
+    let minutes = parts.find((p) => p.type === "minute").value;
 
     // Menambahkan leading zero jika kurang dari 10
-    const formattedHours = hours < 10 ? "0" + hours : hours;
-    const formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
+    hours = hours.length < 2 ? "0" + hours : hours;
+    minutes = minutes.length < 2 ? "0" + minutes : minutes;
 
-    return `${formattedHours}:${formattedMinutes}`;
+    console.log(`${hours}:${minutes}`);
+    return `${hours}:${minutes}`;
   };
 
   handleSubmit = async () => {
@@ -459,9 +482,6 @@ class Absen extends Component {
 
       return;
     }
-    const [jamHarusMasuk, menitHarusMasuk] = this.state.harusMasuk
-      .split(":")
-      .map(Number);
 
     const jamMasuk = await this.getCurrentTime();
     const jamSaatIni = jamMasuk + ":00";
