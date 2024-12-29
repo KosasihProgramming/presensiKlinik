@@ -520,9 +520,15 @@ class Absen extends Component {
       tanggalHariIni,
       this.state.selectedJadwal.tanggal
     );
+
+    const cekJa2Hari = this.DaysSchedule(
+      this.state.selectedJadwal.jam_pulang,
+      this.state.selectedJadwal.jam_masuk
+    );
     console.log(this.state.selectedJadwal, "jadwal terpilih");
     if (
       cekJam == true &&
+      cekJa2Hari == false &&
       this.state.selectedJadwal.jam_masuk !=
         this.state.selectedJadwal.jam_pulang
     ) {
@@ -915,6 +921,18 @@ class Absen extends Component {
 
     return false; // Return false jika tanggal tidak sama
   }
+
+  DaysSchedule = (jam1, jam2) => {
+    // Cek apakah tanggal 1 dan tanggal 2 sama
+    // Ubah string jam1 dan jam2 menjadi objek Date dengan format waktu (termasuk detik)
+    const time1 = new Date(`1970-01-01T${jam1}`);
+    const time2 = new Date(`1970-01-01T${jam2}`);
+
+    // Bandingkan jam1 dan jam2
+    return time1 > time2; // Return true jika jam1 lebih besar dari jam2
+
+    return false; // Return false jika tanggal tidak sama
+  };
   getAllDataIzin = () => {
     axios
       .get(`${urlAPI}/kehadiran/izin/today`)
