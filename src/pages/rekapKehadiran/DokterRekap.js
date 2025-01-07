@@ -399,7 +399,8 @@ class RekapKehadiranDokter extends Component {
     const dataArrayString = updatedData.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
         obj.nama_dokter,
         obj.nama_shift,
         obj.jam_masuk,
@@ -426,7 +427,9 @@ class RekapKehadiranDokter extends Component {
     const dataArrayPengganti = dataPengganti.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
+
         obj.nama_dokter,
         obj.nama_dokter_pengganti,
         obj.nama_shift,
@@ -452,7 +455,8 @@ class RekapKehadiranDokter extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Dokter",
         "Nama Shift",
         "Jam Masuk",
@@ -475,7 +479,8 @@ class RekapKehadiranDokter extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Dokter",
         "",
         "Nama Shift",
@@ -492,6 +497,7 @@ class RekapKehadiranDokter extends Component {
         "",
       ],
       [
+        "",
         "",
         "",
         "Dokter Tetap",

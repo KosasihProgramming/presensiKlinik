@@ -213,12 +213,12 @@ class RekapKehadiranApoteker extends Component {
     const dataArray = sortedData.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
         obj.nama_apoteker,
         obj.nama_shift,
         obj.jam_masuk,
         obj.jam_keluar,
-
         obj.total_jam,
         obj.nama_petugas,
         obj.keterangan,
@@ -247,7 +247,8 @@ class RekapKehadiranApoteker extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Apoteker",
         "Nama Shift",
         "Jam Masuk",

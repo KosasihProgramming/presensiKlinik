@@ -394,7 +394,8 @@ class RekapKehadiranTerapis extends Component {
     const dataArrayString = updatedData.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
         obj.nama_terapis,
         obj.nama_shift,
         obj.jam_masuk,
@@ -418,7 +419,8 @@ class RekapKehadiranTerapis extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Terapis",
         "Nama Shift",
         "Jam Masuk",

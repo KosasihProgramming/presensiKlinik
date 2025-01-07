@@ -46,6 +46,7 @@ class Absen extends Component {
       dendaTelat: 0,
       isPerawat: false,
       isPindahKlinik: 0,
+      isPindah: false,
       pegawai: {},
       cabang: {},
       namaPetugas: "",
@@ -120,7 +121,50 @@ class Absen extends Component {
         });
     }
   };
+  checkHadir = async (barcode) => {
+    try {
+      const response = await axios.get(
+        `${urlAPI}/barcode/jadwal/today-hadir/${barcode}`
+      );
+      console.log("Hadir Hari Ini", response.data.jadwal);
+      return response.data.jadwal; // Kembalikan data ke pemanggil
+    } catch (error) {
+      console.log("Error:", error);
+      return []; // Kembalikan array kosong jika terjadi kesalahan
+    }
+  };
+  checkLanjutShift = (time1, time2) => {
+    console.log(time1, time2);
 
+    const parseTime = (time) => {
+      if (typeof time !== "string") {
+        throw new TypeError("Expected a string in HH:MM:SS format");
+      }
+
+      const [hours, minutes, seconds] = time.split(":").map(Number);
+      return new Date(0, 0, 0, hours, minutes, seconds);
+    };
+
+    const t1 = parseTime(time1);
+    const t2 = parseTime(time2);
+
+    if (t1 >= t2) {
+      console.log(time1, time2, "waktu");
+      const diffInMilliseconds = t1 - t2;
+      const diffInMinutes = diffInMilliseconds / (1000 * 60);
+
+      // Jika selisih kurang dari 10 menit, kembalikan true
+      if (diffInMinutes < 10) {
+        return true;
+      }
+      return false;
+    }
+
+    const diffInMilliseconds = t2 - t1;
+    const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+
+    return diffInHours < 1;
+  };
   handleCheckSubmit = () => {
     // Set timer untuk menjalankan fungsi tambahan setelah 5 detik
     const newTimer = setTimeout(() => {
@@ -137,14 +181,14 @@ class Absen extends Component {
     }
   };
 
-  handleSearch = () => {
+  handleSearch = async () => {
     this.setState({ isLoad: true });
     const { barcode } = this.state;
     const jamMasuk = this.getCurrentTime();
-    const dataIzin = this.getAllDataIzin();
 
     console.log("Jam Masuk", jamMasuk);
     console.log("Jam Rel", this.state.harusMasuk);
+
     if (!barcode) {
       toast.warning("Isi barcode terlebih dahulu", {
         position: "top-right",
@@ -157,134 +201,153 @@ class Absen extends Component {
         theme: "light",
         transition: Bounce,
       });
-    } else {
-      axios
-        .get(`${urlAPI}/barcode/jadwal/${barcode}`)
-        .then((response) => {
-          console.log(response.data);
+      this.setState({ isLoad: false });
+      return; // Exit early if barcode is not provided
+    }
 
-          if (
-            response.data.jadwal.length > 0 &&
-            response.data.barcode.length > 0
-          ) {
-            const sortData = response.data.jadwal.sort((a, b) => {
-              const timeA = new Date(`1970-01-01T${a.jam_masuk}Z`).getTime();
-              const timeB = new Date(`1970-01-01T${b.jam_masuk}Z`).getTime();
-              return timeA - timeB;
+    try {
+      const response = await axios.get(`${urlAPI}/barcode/jadwal/${barcode}`);
+      console.log(response.data);
+
+      if (response.data.jadwal.length > 0 && response.data.barcode.length > 0) {
+        const sortData = response.data.jadwal.sort((a, b) => {
+          const timeA = new Date(`1970-01-01T${a.jam_masuk}Z`).getTime();
+          const timeB = new Date(`1970-01-01T${b.jam_masuk}Z`).getTime();
+          return timeA - timeB;
+        });
+
+        // Mendapatkan waktu saat ini dalam format yang sama
+        const now = new Date();
+        const timeZone = "Asia/Jakarta";
+        const options = {
+          timeZone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        };
+        const formatter = new Intl.DateTimeFormat("en-GB", options);
+        const formattedTime = formatter.format(now); // Misalnya: 14:35:20
+
+        // Membuat waktu dalam format yang sama dengan zona waktu
+        const currentTime = new Date(`1970-01-01T${formattedTime}Z`).getTime();
+
+        // Mencari objek dengan jam_masuk terdekat dengan waktu saat ini
+        const closestTimeObj = sortData.reduce((closest, current) => {
+          const currentDiff = Math.abs(
+            new Date(`1970-01-01T${current.jam_masuk}Z`).getTime() - currentTime
+          );
+          const closestDiff = Math.abs(
+            new Date(`1970-01-01T${closest.jam_masuk}Z`).getTime() - currentTime
+          );
+
+          return currentDiff < closestDiff ? current : closest;
+        });
+
+        console.log(sortData, closestTimeObj, "closes");
+
+        const dataKehadiran = await this.checkHadir(barcode);
+        console.log(dataKehadiran, "kehadiran");
+        let lastObject = {};
+
+        let isLanjut = false;
+        if (dataKehadiran.length > 0) {
+          if (dataKehadiran.length > 1) {
+            // Sortir data berdasarkan jam
+            const sortedData = dataKehadiran.sort((a, b) => {
+              return a.jam_pulang.localeCompare(b.jam_pulang);
             });
-
-            // Mendapatkan waktu saat ini dalam format yang sama
-            const now = new Date();
-            const timeZone = "Asia/Jakarta";
-            const options = {
-              timeZone,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            };
-            const formatter = new Intl.DateTimeFormat("en-GB", options);
-            const formattedTime = formatter.format(now); // Misalnya: 14:35:20
-
-            // Membuat waktu dalam format yang sama dengan zona waktu
-            const currentTime = new Date(
-              `1970-01-01T${formattedTime}Z`
-            ).getTime();
-
-            // Mencari objek dengan jam_masuk terdekat dengan waktu saat ini
-            const closestTimeObj = sortData.reduce((closest, current) => {
-              const currentDiff = Math.abs(
-                new Date(`1970-01-01T${current.jam_masuk}Z`).getTime() -
-                  currentTime
-              );
-              const closestDiff = Math.abs(
-                new Date(`1970-01-01T${closest.jam_masuk}Z`).getTime() -
-                  currentTime
-              );
-
-              return currentDiff < closestDiff ? current : closest;
-            });
-
-            console.log(closestTimeObj, "closes");
-
-            this.getKehadiranPerawat(this.state.cabang);
-
-            this.setState({
-              selectedJadwal: closestTimeObj,
-              idDetailJadwal: closestTimeObj.id,
-              idJadwal: closestTimeObj.id_jadwal,
-              idShift: closestTimeObj.id_shift,
-              harusMasuk: closestTimeObj.jam_masuk,
-            });
-
-            this.setState({
-              dataJadwalHariIni: sortData,
-              namaPegawai: response.data.barcode[0].nama,
-              pegawai: response.data.barcode,
-              isSearch: true,
-            });
-            toast.success("Jadwal ditemukan", {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-              transition: Bounce,
-            });
-            this.handleCheckSubmit();
-          } else if (
-            response.data.jadwal.length == 0 &&
-            response.data.barcode.length == 0
-          ) {
-            toast.error("Barcode tidak ditemukan", {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-              transition: Bounce,
-            });
-          } else if (
-            response.data.jadwal.length == 0 &&
-            response.data.barcode.length > 0
-          ) {
-            toast.warning("Tidak ada jadwal hari ini", {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-              transition: Bounce,
-            });
+            lastObject = sortedData[sortedData.length - 1];
+          } else {
+            lastObject = dataKehadiran[0];
           }
 
-          this.setState({ isLoad: false });
-        })
-        .catch((err) => {
-          console.error(err);
-          this.setState({ isLoad: false });
+          const timeNow = await this.getCurrentTimeDetail();
+          isLanjut = await this.checkLanjutShift(
+            lastObject.jam_pulang,
+            timeNow
+          );
+        }
+        this.getKehadiranPerawat(this.state.cabang);
 
-          toast.error("Tidak dapat menemukan barcode", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
-            transition: Bounce,
-          });
+        console.log(isLanjut);
+
+        this.setState({
+          isLanjutShift: isLanjut == true ? 1 : 0,
+          selectedJadwal: closestTimeObj,
+          idDetailJadwal: closestTimeObj.id,
+          idJadwal: closestTimeObj.id_jadwal,
+          idShift: closestTimeObj.id_shift,
+          harusMasuk: closestTimeObj.jam_masuk,
+          dataJadwalHariIni: sortData,
+          namaPegawai: response.data.barcode[0].nama,
+          pegawai: response.data.barcode,
+          isSearch: true,
+          isPindah: closestTimeObj.isPindah == 1 ? true : false,
+          isPindahKlinik: closestTimeObj.isPindah,
         });
+
+        toast.success("Jadwal ditemukan", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+        this.handleCheckSubmit();
+      } else if (
+        response.data.jadwal.length === 0 &&
+        response.data.barcode.length === 0
+      ) {
+        toast.error("Barcode tidak ditemukan", {
+          position: "top -right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+      } else if (
+        response.data.jadwal.length === 0 &&
+        response.data.barcode.length > 0
+      ) {
+        toast.warning("Tidak ada jadwal hari ini", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+      }
+
+      this.setState({ isLoad: false });
+    } catch (err) {
+      console.log(err);
+      console.error(err);
+      this.setState({ isLoad: false });
+
+      toast.error("Tidak dapat menemukan barcode", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
     }
   };
 
@@ -375,6 +438,15 @@ class Absen extends Component {
 
     console.log(`${hours}:${minutes}`);
     return `${hours}:${minutes}`;
+  };
+  getCurrentTimeDetail = () => {
+    const now = new Date();
+
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+
+    return `${hours}:${minutes}:${seconds}`;
   };
 
   handleSubmit = async () => {
@@ -1244,8 +1316,9 @@ class Absen extends Component {
                                   type="checkbox"
                                   id="checkbox"
                                   name="checkbox"
-                                  checked={this.state.isPindahKlinik === 1}
+                                  checked={this.state.isPindah}
                                   onChange={this.handleCheckboxChange}
+                                  value={this.state.isPindah}
                                   className="form-checkbox h-5 w-5 text-teal-600"
                                 />
                                 <label

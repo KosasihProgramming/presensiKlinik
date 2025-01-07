@@ -55,6 +55,7 @@ class DetailJadwalMobile extends Component {
       jamKeluar: "",
       idShift: "",
       totalJadwal: 0,
+      isPindah: 0,
       jumlahHadir: 0,
       persenHadir: 0,
       tanggalAwal: "",
@@ -219,12 +220,20 @@ class DetailJadwalMobile extends Component {
     });
   };
 
+
   handleSubmit = (e) => {
     e.preventDefault();
-    const { idShift, idJadwal, tanggal } = this.state;
+    let { idShift, idJadwal, tanggal, isPindah } = this.state;
+
+    // Ubah format tanggal jika formatnya YYYY-MM-DD
+    if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
+      tanggal = tanggal.replace(/-/g, "/"); // Ganti "-" menjadi "/"
+    }
+
     console.log(idJadwal);
     console.log(idShift);
     console.log(tanggal);
+
     // Cek kelengkapan form
     if (!tanggal || !idShift || !idJadwal) {
       Swal.fire({
@@ -239,12 +248,15 @@ class DetailJadwalMobile extends Component {
       idShift,
       idJadwal,
       tanggal,
+      isPindah,
     };
 
     const dataExists = this.state.dataDetail.some((jadwal) => {
       // Membandingkan barcode, tanggal, dan bulan dengan data yang ada
       return jadwal.id_shift === idShift && jadwal.tanggal === tanggal;
     });
+
+    console.log(postData);
     if (dataExists) {
       Swal.fire({
         icon: "error",
@@ -261,7 +273,6 @@ class DetailJadwalMobile extends Component {
             title: "Berhasil",
             text: "Data berhasil disimpan",
           });
-          this.setState({ isInput: false });
           this.getDetailJadwal(this.state.idJadwal);
         })
         .catch((error) => {
@@ -269,7 +280,6 @@ class DetailJadwalMobile extends Component {
         });
     }
   };
-
   handleSubmitOtomatis = (e) => {
     e.preventDefault();
     const { idShift, idJadwal, tanggalAwalOtomatis, tanggalAkhirOtomatis } =
@@ -384,6 +394,8 @@ class DetailJadwalMobile extends Component {
         const newData = response.data.map((item) => ({
           ...item,
           hadir: item.isHadir == 0 ? "Tidak" : "Ya", // Menggunakan operator ternary
+          pindah: item.isPindah == 0 ? "Tidak" : "Ya",
+
         }));
         const data = newData.map((item) => [
           item.tanggal,
@@ -391,6 +403,7 @@ class DetailJadwalMobile extends Component {
           item.nama_shift,
           item.jam_masuk,
           item.jam_pulang,
+          item.pindah,
           item.hadir,
           item.nominal_hadir,
         ]);
@@ -588,26 +601,30 @@ class DetailJadwalMobile extends Component {
 
   handleSelect = (name, selectedOption) => {
     // Update state with selected option dynamically based on dropdown name
-    let kode = "";
-    // Lakukan pencarian berdasarkan kd_dokter
-    const shift = this.state.dataShift.find(
-      (data) => data.id_shift === selectedOption.value
-    );
-    if (selectedOption) {
-      this.setState({ shiftTerpilih: selectedOption });
-    }
-
-    // Periksa apakah dokterTerpilih ditemukan
-    if (shift) {
-      kode = shift.id_shift;
+    if (name == "pindah") {
+      this.setState({ isPindah: selectedOption.value });
+    } else {
+      let kode = "";
       // Lakukan pencarian berdasarkan kd_dokter
-      this.setState({
-        idShift: kode,
-        jamKeluar: shift.jam_pulang,
-        jamMasuk: shift.jam_masuk,
-      });
+      const shift = this.state.dataShift.find(
+        (data) => data.id_shift === selectedOption.value
+      );
+      if (selectedOption) {
+        this.setState({ shiftTerpilih: selectedOption });
+      }
+
+      // Periksa apakah dokterTerpilih ditemukan
+      if (shift) {
+        kode = shift.id_shift;
+        // Lakukan pencarian berdasarkan kd_dokter
+        this.setState({
+          idShift: kode,
+          jamKeluar: shift.jam_pulang,
+          jamMasuk: shift.jam_masuk,
+        });
+      }
+      console.log(`${name} Terpilih`, this.state[name]);
     }
-    console.log(`${name} Terpilih`, this.state[name]);
   };
   handleInput = () => {
     this.setState({ isInputJadwalOtomatis: false });
@@ -744,7 +761,7 @@ class DetailJadwalMobile extends Component {
         data.nama_shift,
         data.jam_masuk,
         data.jam_pulang,
-        data.hadir,
+        data.pindah,
         data.nominal_hadir,
       ]);
 
@@ -816,6 +833,10 @@ class DetailJadwalMobile extends Component {
       }
     };
 
+    const pindahOption = [
+      { value: 1, label: "Ya" },
+      { value: 0, label: "Tidak" },
+    ];
     console.log(currentData, "data Jadwal");
     return (
       <div className="container mx-auto">
@@ -911,6 +932,23 @@ class DetailJadwalMobile extends Component {
                         inputFormat="DD/MM/YYYY"
                       />
                     </LocalizationProvider>
+                  </div>
+                </Form.Group>
+                <Form.Group className="w-full flex justify-between items-center ">
+                  <Form.Label className="label-text">
+                    Pindah Klinik ? :
+                  </Form.Label>
+                  <div className="w-[60%] z-[99]">
+                    <Select
+                      onChange={(selectedOption) =>
+                        this.handleSelect("pindah", selectedOption)
+                      }
+                      name="pindah"
+                      inputId="input"
+                      placeholder="Pindah Klinik ?"
+                      options={pindahOption}
+                      isSearchable={true}
+                    />
                   </div>
                 </Form.Group>
               </div>
@@ -1043,6 +1081,7 @@ class DetailJadwalMobile extends Component {
                     {this.formatStringTanggal(data.tanggal)} / {data.jam_masuk}{" "}
                     - {data.jam_pulang}
                   </div>
+                  <div className="font-medium text-sm border border-teal-500 rounded-md w-full text-center p-2">{data.pindah} Pindah Klinik</div>
                 </Link>
               ))}
 

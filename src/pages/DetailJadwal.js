@@ -46,6 +46,7 @@ class DetailJadwal extends Component {
       isInputJadwalOtomatis: false,
       isUpdate: false,
       isInput: false,
+      isPindah: 0,
       idJadwal: "",
       uidJadwal: idJadwal,
       dataDetail: [],
@@ -218,7 +219,7 @@ class DetailJadwal extends Component {
   };
   handleSubmit = (e) => {
     e.preventDefault();
-    let { idShift, idJadwal, tanggal } = this.state;
+    let { idShift, idJadwal, tanggal, isPindah } = this.state;
 
     // Ubah format tanggal jika formatnya YYYY-MM-DD
     if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
@@ -243,12 +244,15 @@ class DetailJadwal extends Component {
       idShift,
       idJadwal,
       tanggal,
+      isPindah,
     };
 
     const dataExists = this.state.dataDetail.some((jadwal) => {
       // Membandingkan barcode, tanggal, dan bulan dengan data yang ada
       return jadwal.id_shift === idShift && jadwal.tanggal === tanggal;
     });
+
+    console.log(postData);
     if (dataExists) {
       Swal.fire({
         icon: "error",
@@ -388,13 +392,17 @@ class DetailJadwal extends Component {
         const newData = response.data.map((item) => ({
           ...item,
           hadir: item.isHadir == 0 ? "Tidak" : "Ya", // Menggunakan operator ternary
+          pindah: item.isPindah == 0 ? "Tidak" : "Ya",
         }));
+
+        console.log(newData, "data mentah");
         const data = newData.map((item) => [
           item.tanggal,
           item.nama,
           item.nama_shift,
           item.jam_masuk,
           item.jam_pulang,
+          item.pindah,
           item.hadir,
           item.nominal_hadir,
         ]);
@@ -410,6 +418,7 @@ class DetailJadwal extends Component {
           "Shift",
           "Jam",
           "",
+          "Lanjut",
           "Hadir",
           "Nominal",
         ];
@@ -426,10 +435,14 @@ class DetailJadwal extends Component {
           .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
           .map((data) => ({
             tanggal: this.formatStringTanggal(data.tanggal),
+            date: data.tanggal,
             id: data.detail_jadwal_id,
+            id_shift: data.id_shift,
             nama_shift: data.nama_shift,
             jam_masuk: data.jam_masuk,
             jam_pulang: data.jam_pulang,
+            pindah: data.pindah,
+            isPindah: data.isPindah,
             hadir: data.hadir,
             nominal: data.nominal_hadir,
           }));
@@ -554,8 +567,11 @@ class DetailJadwal extends Component {
 
   handleUpdateClick = (item) => {
     this.setState({ isUpdate: true, isInput: false });
+    const dataJadwal = this.state.dataDetail.find((a) => a.id == item.id);
+    console.log(dataJadwal);
+
     const shift = this.state.dataShift.find(
-      (data) => data.id_shift === item.id_shift
+      (data) => data.id_shift === dataJadwal.id_shift
     );
 
     const shiftDapat = { value: shift.id_shift, label: shift.nama_shift };
@@ -563,12 +579,13 @@ class DetailJadwal extends Component {
       this.setState({ shiftTerpilih: shiftDapat });
     }
     this.setState({
-      jamKeluar: item.jam_pulang,
-      jamMasuk: item.jam_masuk,
-      idDetail: item.detail_jadwal_id,
+      jamKeluar: dataJadwal.jam_pulang,
+      jamMasuk: dataJadwal.jam_masuk,
+      idDetail: dataJadwal.id,
+      isPindah: dataJadwal.isPindah,
     });
 
-    const tanggalAwal = this.convertDateFormat(item.tanggal);
+    const tanggalAwal = this.convertDateFormat(dataJadwal.date);
     const tanggal = tanggalAwal.format("YYYY/MM/DD");
     this.setState({
       tanggalDate: tanggalAwal,
@@ -578,13 +595,14 @@ class DetailJadwal extends Component {
 
   handleUpdate = (e) => {
     e.preventDefault();
-    const { tanggal, idJadwal, idShift, idDetail } = this.state;
+    const { tanggal, idJadwal, idShift, idDetail, isPindah } = this.state;
 
     const postData = {
       tanggal,
       idJadwal,
       idShift,
       idDetail,
+      isPindah,
     };
 
     axios
@@ -605,26 +623,30 @@ class DetailJadwal extends Component {
 
   handleSelect = (name, selectedOption) => {
     // Update state with selected option dynamically based on dropdown name
-    let kode = "";
-    // Lakukan pencarian berdasarkan kd_dokter
-    const shift = this.state.dataShift.find(
-      (data) => data.id_shift === selectedOption.value
-    );
-    if (selectedOption) {
-      this.setState({ shiftTerpilih: selectedOption });
-    }
-
-    // Periksa apakah dokterTerpilih ditemukan
-    if (shift) {
-      kode = shift.id_shift;
+    if (name == "pindah") {
+      this.setState({ isPindah: selectedOption.value });
+    } else {
+      let kode = "";
       // Lakukan pencarian berdasarkan kd_dokter
-      this.setState({
-        idShift: kode,
-        jamKeluar: shift.jam_pulang,
-        jamMasuk: shift.jam_masuk,
-      });
+      const shift = this.state.dataShift.find(
+        (data) => data.id_shift === selectedOption.value
+      );
+      if (selectedOption) {
+        this.setState({ shiftTerpilih: selectedOption });
+      }
+
+      // Periksa apakah dokterTerpilih ditemukan
+      if (shift) {
+        kode = shift.id_shift;
+        // Lakukan pencarian berdasarkan kd_dokter
+        this.setState({
+          idShift: kode,
+          jamKeluar: shift.jam_pulang,
+          jamMasuk: shift.jam_masuk,
+        });
+      }
+      console.log(`${name} Terpilih`, this.state[name]);
     }
-    console.log(`${name} Terpilih`, this.state[name]);
   };
   handleInput = () => {
     this.setState({ isInputJadwalOtomatis: false });
@@ -759,6 +781,7 @@ class DetailJadwal extends Component {
       data.nama_shift,
       data.jam_masuk,
       data.jam_pulang,
+      data.pindah,
       data.hadir,
       data.nominal,
     ]);
@@ -767,6 +790,7 @@ class DetailJadwal extends Component {
       "Shift",
       "Jam Masuk",
       "jam Pulang",
+      "Pindah Klinik",
       "Hadir",
       "Nominal Hadir",
       {
@@ -806,6 +830,11 @@ class DetailJadwal extends Component {
       value: data.id_shift,
       label: data.nama_shift, // Ganti dengan properti yang sesuai dari objek dokter
     }));
+
+    const pindahOption = [
+      { value: 1, label: "Ya" },
+      { value: 0, label: "Tidak" },
+    ];
 
     return (
       <div className="container mx-auto mt-2">
@@ -1058,7 +1087,7 @@ class DetailJadwal extends Component {
                         >
                           <Form.Group className="form-field">
                             <Form.Label className="label-text">
-                              Shift :
+                              Shift
                             </Form.Label>
                             <div className="dropdown-container">
                               <Select
@@ -1078,7 +1107,7 @@ class DetailJadwal extends Component {
                           </Form.Group>
                           <Form.Group className="form-field">
                             <Form.Label className="label-text">
-                              Jam Masuk :
+                              Jam Masuk
                             </Form.Label>
 
                             <div
@@ -1091,10 +1120,10 @@ class DetailJadwal extends Component {
                               {this.state.jamMasuk}
                             </div>
                           </Form.Group>
-                          '
+
                           <Form.Group className="form-field">
                             <Form.Label className="label-text">
-                              Jam Keluar :
+                              Jam Keluar
                             </Form.Label>
 
                             <div
@@ -1107,10 +1136,10 @@ class DetailJadwal extends Component {
                               {this.state.jamKeluar}
                             </div>
                           </Form.Group>
-                          '
+
                           <Form.Group className="form-field">
                             <Form.Label className="label-text">
-                              Tanggal :
+                              Tanggal
                             </Form.Label>
                             <div className="datepicker">
                               <LocalizationProvider
@@ -1136,14 +1165,29 @@ class DetailJadwal extends Component {
                             </div>
                           </Form.Group>
                         </Row>
-                        <button
-                          type="submit"
-                          style={{ marginTop: "2rem" }}
-                          className="btn-input btn-15 custom-btn"
-                          onClick={this.handleSubmit}
-                        >
-                          Simpan
-                        </button>
+                        <div className="w-full py-4 flex justify-start gap-6 items-center ">
+                          <h4 className="text-sm font-medium">
+                            Apakah Pindah Klinik ?
+                          </h4>
+                          <Select
+                            onChange={(selectedOption) =>
+                              this.handleSelect("pindah", selectedOption)
+                            }
+                            className="border border-teal-500 w-[15rem]"
+                            name="pindah"
+                            inputId="input"
+                            placeholder="Pindah Klinik ?"
+                            options={pindahOption}
+                            isSearchable={true}
+                          />
+                          <button
+                            type="submit"
+                            className="btn-input btn-15 custom-btn"
+                            onClick={this.handleSubmit}
+                          >
+                            Simpan
+                          </button>
+                        </div>
                       </div>
                     </div>
                   }
@@ -1164,7 +1208,7 @@ class DetailJadwal extends Component {
                     style={{ justifyContent: "flex-start", gap: "2rem" }}
                   >
                     <Form.Group className="form-field">
-                      <Form.Label className="label-text">Shift :</Form.Label>
+                      <Form.Label className="label-text">Shift</Form.Label>
                       <div className="dropdown-container">
                         <Select
                           onChange={(selectedOption) =>
@@ -1180,9 +1224,7 @@ class DetailJadwal extends Component {
                       </div>
                     </Form.Group>
                     <Form.Group className="form-field">
-                      <Form.Label className="label-text">
-                        Jam Masuk :
-                      </Form.Label>
+                      <Form.Label className="label-text">Jam Masuk</Form.Label>
 
                       <div
                         type="text"
@@ -1196,9 +1238,7 @@ class DetailJadwal extends Component {
                     </Form.Group>
                     '
                     <Form.Group className="form-field">
-                      <Form.Label className="label-text">
-                        Jam Keluar :
-                      </Form.Label>
+                      <Form.Label className="label-text">Jam Keluar</Form.Label>
 
                       <div
                         type="text"
@@ -1212,7 +1252,7 @@ class DetailJadwal extends Component {
                     </Form.Group>
                     '
                     <Form.Group className="form-field">
-                      <Form.Label className="label-text">Tanggal :</Form.Label>
+                      <Form.Label className="label-text">Tanggal</Form.Label>
                       <div className="datepicker">
                         <LocalizationProvider
                           dateAdapter={AdapterDayjs}
@@ -1234,14 +1274,29 @@ class DetailJadwal extends Component {
                       </div>
                     </Form.Group>
                   </Row>
-                  <button
-                    type="submit"
-                    style={{ marginTop: "2rem" }}
-                    className="btn-input btn-15 custom-btn"
-                    onClick={this.handleUpdate}
-                  >
-                    Update
-                  </button>
+                  <div className="w-full py-4 flex justify-start gap-6 items-center ">
+                    <h4 className="text-sm font-medium">
+                      Apakah Pindah Klinik ?
+                    </h4>
+                    <Select
+                      onChange={(selectedOption) =>
+                        this.handleSelect("pindah", selectedOption)
+                      }
+                      className="border border-teal-500 w-[15rem]"
+                      name="pindah"
+                      inputId="input"
+                      placeholder="Pindah Klinik ?"
+                      options={pindahOption}
+                      isSearchable={false}
+                    />
+                    <button
+                      type="submit"
+                      className="btn-input btn-15 custom-btn"
+                      onClick={this.handleUpdate}
+                    >
+                      Update
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

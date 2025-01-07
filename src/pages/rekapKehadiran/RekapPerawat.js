@@ -230,7 +230,6 @@ class RekapKehadiranPerawat extends Component {
       // Menggabungkan semua objek dalam detailSales menjadi satu array
       const allDetailSales = sales.flatMap((sale) => sale.salesdetail);
 
-  
       const cleanedData = allDetailSales.map((item) => {
         // Menerjemahkan formula ke operasi perhitungan angka
         let formula = item.formula
@@ -354,7 +353,8 @@ class RekapKehadiranPerawat extends Component {
     const dataArrayString = updatedData.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
         obj.nama_perawat,
         obj.nama_shift,
         obj.jam_masuk,
@@ -375,7 +375,8 @@ class RekapKehadiranPerawat extends Component {
     const dataArrayPengganti = dataPengganti.map((obj, index) => {
       return [
         index + 1,
-        this.formatTanggal(obj.tanggal),
+        obj.tanggal,
+        obj.tgl_pulang,
         obj.nama_perawat,
         obj.nama_pengganti,
         obj.nama_shift,
@@ -400,7 +401,8 @@ class RekapKehadiranPerawat extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Perawat",
         "Nama Shift",
         "Jam Masuk",
@@ -424,7 +426,8 @@ class RekapKehadiranPerawat extends Component {
       [""],
       [
         "No",
-        "Tanggal",
+        "Tanggal Masuk",
+        "Tanggal Pulang",
         "Nama Perawat",
         "",
         "Nama Shift",
@@ -443,6 +446,7 @@ class RekapKehadiranPerawat extends Component {
         "",
       ],
       [
+        "",
         "",
         "",
         "Perawat Tetap",
