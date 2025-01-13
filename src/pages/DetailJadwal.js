@@ -312,6 +312,7 @@ class DetailJadwal extends Component {
         idShift,
         idJadwal,
         tanggal,
+        isPindah: "0",
       };
 
       console.log(postData);
