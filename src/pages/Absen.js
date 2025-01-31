@@ -360,6 +360,7 @@ class Absen extends Component {
     const isChecked = e.target.checked;
     this.setState({
       isPindahKlinik: isChecked ? 1 : 0,
+      isPindah: isChecked,
       isLanjutShift: isChecked ? 0 : this.state.isLanjutShift,
     });
   };
@@ -1316,7 +1317,10 @@ class Absen extends Component {
                                   type="checkbox"
                                   id="checkbox"
                                   name="checkbox"
-                                  checked={this.state.isPindah}
+                                  checked={
+                                    this.state.isPindah ||
+                                    this.state.isPindahKlinik == 1
+                                  }
                                   onChange={this.handleCheckboxChange}
                                   value={this.state.isPindah}
                                   className="form-checkbox h-5 w-5 text-teal-600"
