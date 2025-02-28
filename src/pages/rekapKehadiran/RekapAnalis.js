@@ -334,15 +334,7 @@ class RekapKehadiranAnalis extends Component {
     this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     // Gunakan Promise.all untuk menangani operasi asynchronous
-    const updatedData = await Promise.all(
-      sortedData.map(async (item) => {
-        const komisi = await this.getDataKomisi(
-          item.tanggal,
-          item.servicedoerid
-        ); // Tunggu hasil getDataKomisi
-        return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
-      })
-    );
+    const updatedData = sortedData
 
     console.log(updatedData, "sort");
     this.setState({ charLoad: "Bentarr Lagi..." });

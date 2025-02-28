@@ -335,15 +335,7 @@ class RekapKehadiranPerawat extends Component {
     );
     this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
     // Gunakan Promise.all untuk menangani operasi asynchronous
-    const updatedData = await Promise.all(
-      sortedData.map(async (item) => {
-        const komisi = await this.getDataKomisi(
-          item.tanggal,
-          item.servicedoerid
-        ); // Tunggu hasil getDataKomisi
-        return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
-      })
-    );
+    const updatedData = sortedData
     this.setState({ charLoad: "Bentarr Lagi..." });
 
     console.log(updatedData, "sort");

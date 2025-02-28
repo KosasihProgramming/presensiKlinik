@@ -371,12 +371,7 @@ class RekapKehadiranDokter extends Component {
     );
     this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
     // Gunakan Promise.all untuk menangani operasi asynchronous
-    const updatedData = await Promise.all(
-      sortedData.map(async (item) => {
-        const komisi = await this.getDataKomisi(item.tanggal, item.salesmanid); // Tunggu hasil getDataKomisi
-        return { ...item, komisi }; // Kembalikan objek baru dengan properti 'komisi'
-      })
-    );
+    const updatedData = sortedData
 
     console.log(updatedData, "sort");
     this.setState({ charLoad: "hehe..." });
@@ -389,10 +384,10 @@ class RekapKehadiranDokter extends Component {
     const allKomisiResults = [];
 
     // Iterasi setiap item dan kumpulkan hasil komisi dari tiap tanggal
-    for (const item of dataPengganti) {
-      const komisiResult = await this.getKomisiByTanggal(item.tanggal); // Dapatkan hasil komisi berdasarkan tanggal
-      allKomisiResults.push(...komisiResult); // Push semua hasil dari komisiResult ke allKomisiResults
-    }
+    // for (const item of dataPengganti) {
+    //   const komisiResult = await this.getKomisiByTanggal(item.tanggal); // Dapatkan hasil komisi berdasarkan tanggal
+    //   allKomisiResults.push(...komisiResult); // Push semua hasil dari komisiResult ke allKomisiResults
+    // }
     this.setState({ charLoad: "Bentarr Lagi..." });
 
     console.log("data pengganti", allKomisiResults);

@@ -318,12 +318,7 @@ class RekapKehadiranFarmasi extends Component {
     this.setState({ charLoad: "Sabar Hehe, Disini Agak Lama..." });
 
     // Langkah 2: Jalankan Promise.all untuk mengolah data berdasarkan tanggal unik
-    const updatedData = await Promise.all(
-      uniqueDates.map(async (item) => {
-        const net = await this.getDataKomisi(item.tanggal); // Tunggu hasil getDataKomisi
-        return { ...item, net }; // Kembalikan objek baru dengan properti 'net' dari getDataKomisi
-      })
-    );
+    const updatedData = uniqueDates
 
     console.log(updatedData, "data net");
 
