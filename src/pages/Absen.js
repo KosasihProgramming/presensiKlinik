@@ -758,6 +758,7 @@ class Absen extends Component {
       }
 
       const absenMasuk = {
+        pegawai:namaPegawai,
         barcode: barcode,
         id_jadwal: idJadwal,
         id_detail_jadwal: idDetailJadwal,
