@@ -299,6 +299,7 @@ const Pulang = () => {
           }),
         }
       );
+      await sendMessageDiscord(message);
 
       if (response.ok) {
         console.log("Berhasil Dikirmkan");
@@ -307,6 +308,34 @@ const Pulang = () => {
       }
     } catch (error) {
       console.error("Error:", error);
+    }
+  };
+
+  const sendMessageDiscord = async (text) => {
+    try {
+      const formattedText = text
+        .replace(/<b>/gi, "**")
+        .replace(/<\/b>/gi, "**");
+
+      const response = await fetch(
+        "https://discord.com/api/webhooks/1451791867875299483/MyfLKiA1Z3nTRvxqpb21267XrMWru7RsIqxCF6wSKfhSm4wdNAm_r8qJapC2zOOXAM0k",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          mode: "cors",
+          body: JSON.stringify({
+            content: formattedText.slice(0, 2000),
+          }),
+        }
+      );
+
+      if (response.status === 204) {
+        console.log("✅ Pesan Discord berhasil dikirim");
+      }
+    } catch (error) {
+      console.error("❌ Error Discord:", error);
     }
   };
   const getCurrentTime = () => {
