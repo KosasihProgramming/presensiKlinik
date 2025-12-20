@@ -422,12 +422,12 @@ class Absen extends Component {
 
   sendMessageDiscord = async (text) => {
     try {
-      const formattedText = text
+      const formattedText = "Laporan Dokter Pengganti\n"+text
         .replace(/<b>/gi, "**")
         .replace(/<\/b>/gi, "**");
 
       const response = await fetch(
-        "https://discord.com/api/webhooks/1451765232006463652/wBSaTDK1MesxWNIHTNy28MTAmhEB63zACewtMxGCeDFX4PN-ChV3WgXYh0YjGp7Xf_-H",
+        "https://discord.com/api/webhooks/1451791867875299483/MyfLKiA1Z3nTRvxqpb21267XrMWru7RsIqxCF6wSKfhSm4wdNAm_r8qJapC2zOOXAM0k",
         {
           method: "POST",
           headers: {
