@@ -124,7 +124,7 @@ class Absen extends Component {
   checkHadir = async (barcode) => {
     try {
       const response = await axios.get(
-        `${urlAPI}/barcode/jadwal/today-hadir/${barcode}`
+        `${urlAPI}/barcode/jadwal/today-hadir/${barcode}`,
       );
       console.log("Hadir Hari Ini", response.data.jadwal);
       return response.data.jadwal; // Kembalikan data ke pemanggil
@@ -235,10 +235,12 @@ class Absen extends Component {
         // Mencari objek dengan jam_masuk terdekat dengan waktu saat ini
         const closestTimeObj = sortData.reduce((closest, current) => {
           const currentDiff = Math.abs(
-            new Date(`1970-01-01T${current.jam_masuk}Z`).getTime() - currentTime
+            new Date(`1970-01-01T${current.jam_masuk}Z`).getTime() -
+              currentTime,
           );
           const closestDiff = Math.abs(
-            new Date(`1970-01-01T${closest.jam_masuk}Z`).getTime() - currentTime
+            new Date(`1970-01-01T${closest.jam_masuk}Z`).getTime() -
+              currentTime,
           );
 
           return currentDiff < closestDiff ? current : closest;
@@ -265,7 +267,7 @@ class Absen extends Component {
           const timeNow = await this.getCurrentTimeDetail();
           isLanjut = await this.checkLanjutShift(
             lastObject.jam_pulang,
-            timeNow
+            timeNow,
           );
         }
         this.getKehadiranPerawat(this.state.cabang);
@@ -406,7 +408,7 @@ class Absen extends Component {
             parse_mode: "html",
             message_thread_id: thread,
           }),
-        }
+        },
       );
       await this.sendMessageDiscord(message);
 
@@ -422,12 +424,12 @@ class Absen extends Component {
 
   sendMessageDiscord = async (text) => {
     try {
-      const formattedText = "Laporan Dokter Pengganti\n"+text
-        .replace(/<b>/gi, "**")
-        .replace(/<\/b>/gi, "**");
+      const formattedText =
+        "Laporan Dokter Pengganti\n" +
+        text.replace(/<b>/gi, "**").replace(/<\/b>/gi, "**");
 
       const response = await fetch(
-        "https://discord.com/api/webhooks/1451791867875299483/MyfLKiA1Z3nTRvxqpb21267XrMWru7RsIqxCF6wSKfhSm4wdNAm_r8qJapC2zOOXAM0k",
+        "https://discord.com/api/webhooks/1451765232006463652/wBSaTDK1MesxWNIHTNy28MTAmhEB63zACewtMxGCeDFX4PN-ChV3WgXYh0YjGp7Xf_-H",
         {
           method: "POST",
           headers: {
@@ -437,7 +439,7 @@ class Absen extends Component {
           body: JSON.stringify({
             content: formattedText.slice(0, 2000),
           }),
-        }
+        },
       );
 
       if (response.status === 204) {
@@ -620,12 +622,12 @@ class Absen extends Component {
       jamSaatIni,
       this.state.selectedJadwal.jam_pulang,
       tanggalHariIni,
-      this.state.selectedJadwal.tanggal
+      this.state.selectedJadwal.tanggal,
     );
 
     const cekJa2Hari = this.DaysSchedule(
       this.state.selectedJadwal.jam_pulang,
-      this.state.selectedJadwal.jam_masuk
+      this.state.selectedJadwal.jam_masuk,
     );
     console.log(this.state.selectedJadwal, "jadwal terpilih");
     if (
@@ -833,7 +835,7 @@ class Absen extends Component {
               icon: "warning",
               title: "Maaf",
               text: `Anda Terkena Denda Telat Sebesar ${this.formatRupiah(
-                denda
+                denda,
               )}`,
               focusConfirm: false,
               reverseButtons: true,
@@ -917,13 +919,13 @@ class Absen extends Component {
     try {
       const durasi = this.hitungSelisihMenit(
         konfersiJam(this.state.selectedJadwal.jam_masuk),
-        konfersiJam(this.state.selectedJadwal.jam_pulang)
+        konfersiJam(this.state.selectedJadwal.jam_pulang),
       );
       console.log(
         konfersiJam(this.state.selectedJadwal.jam_masuk),
         konfersiJam(this.state.selectedJadwal.jam_pulang),
         durasi,
-        "jam"
+        "jam",
       );
 
       // Membuat FormData untuk mengirim data dan file
@@ -952,7 +954,7 @@ class Absen extends Component {
           headers: {
             "Content-Type": "multipart/form-data", // Pastikan tipe konten adalah multipart
           },
-        }
+        },
       );
       const text = `${this.state.namaPegawai} Alpha Selama ${durasi} Menit, Dengan Alasan Tidak Presensi Masuk dan Izin`;
       await this.sendMessageToTelegram(text);
@@ -1310,13 +1312,13 @@ class Absen extends Component {
                                   const selectedData =
                                     this.state.dataJadwalHariIni.find(
                                       (data) =>
-                                        data.id === parseInt(e.target.value)
+                                        data.id === parseInt(e.target.value),
                                     );
                                   const selectedIdJadwal =
                                     selectedData.id_jadwal;
                                   const selectedIdShift = selectedData.id_shift;
                                   const selectedHarusMasuk = konfersiJam(
-                                    selectedData.jam_masuk
+                                    selectedData.jam_masuk,
                                   );
                                   // Jika ada timer aktif, batalkan
                                   if (this.state.timer) {
